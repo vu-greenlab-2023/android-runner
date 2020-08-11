@@ -9,10 +9,8 @@ networkInf = {'downlink': 0, 'effectiveType': 0, 'rtt':0, 'saveData':False}
 storageEstimate = {'quota':0, 'usage':0, 'caches':0, 'indexedDB':0, 'serviceWorker':0}
 fpResult = {'fp':0}
 fcpResult = {'fcp':0}
-webAppName = ""
 httpd = 0
 
-#TODO Remember to run addJS.py to the subject except apache(apache is already done)
 class TestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
@@ -50,13 +48,6 @@ class TestHandler(BaseHTTPRequestHandler):
                fcpResult['fcp'] = data_string.split("fcp\",\"data\":")[1].split(",\"eventProperties",1)[0]
 
             outputDir = "output"
-
-            #if 'WebName' in data_string:
-              #webAppName = data_string.split("WebName\':")[1].split(", \'Load\'")[0]
-              #webAppName = ((webAppName.replace("//","")).replace("/","-")).replace(":","-")
-              #webAppName = webAppName[:-1]
-              #outputDir = outputDir + "/"+webAppName + "/chrome/batterystats"
-              #print(webAppName)
 
             if not os.path.exists(outputDir):
                os.makedirs(outputDir)
@@ -97,11 +88,9 @@ def start_server():
     server_address = ('', 8080)
     global httpd
     httpd = HTTPServer(server_address, TestHandler)
-    #print("Helllllo")
     httpd.serve_forever()
 
 def stop_server():
    """Stop the server."""
    global httpd
-   #print(httpd)
    httpd.server_close()
