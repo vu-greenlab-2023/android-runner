@@ -4,27 +4,22 @@ import time
 import csv
 import threading
 import shutil
-#http.server import BaseHTTPRequestHandler, HTTPServer
 from AndroidRunner.Plugins.perfume_js.server import start_server, stop_server
 
 from AndroidRunner.Plugins.Profiler import Profiler
 
-#https://riptutorial.com/python/example/8570/start-simple-httpserver-in-a-thread-and-open-the-browser
-#daemon = 0
 
-class Perfume_js(Profiler): #, BaseHTTPRequestHandler
+class Perfume_js(Profiler):
     def __init__(self, config, paths):
         super(Perfume_js, self).__init__(config, paths)
         self.output_dir = ''
         self.logcat_output = ''
         self.profile = False
         self.metrics = config['metrics']
-        #self.httpd= ""
 
     def start_profiling(self, device, **kwargs):
         self.profile = True
         self.logcat_output = '{}logcat_{}_{}.txt'.format(self.output_dir, device.id, time.strftime('%Y.%m.%d_%H%M%S'))
-        #global daemon, stop_daemon
         daemon = threading.Thread(name='daemon_server', target=start_server)	
         daemon.setDaemon(True) # Set as a daemon so it will be killed once the main thread is dead.
         daemon.start()
@@ -32,14 +27,12 @@ class Perfume_js(Profiler): #, BaseHTTPRequestHandler
 
     def stop_profiling(self, device, **kwargs):
         self.profile = False
-        #global daemon, stop_daemon
         stop_server()
 
     def collect_results(self, device, path=None):
         perfumeOutputFiles= os.listdir("output")
 
         for onefile in perfumeOutputFiles:
-            #print(any(metr in onefile for metr in self.metrics))
             if any(metr in onefile for metr in self.metrics):
                 newFilesDestination= shutil.move("output/"+onefile,self.output_dir)
         shutil.rmtree("output/")
