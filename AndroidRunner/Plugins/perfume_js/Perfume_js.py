@@ -51,6 +51,8 @@ class Perfume_js(Profiler): #, BaseHTTPRequestHandler
         return []
 
     def load(self, device):
+        if(os.path.isdir("output")): #deletes folder called 'output' in the root directory (NOTE: The root directory here is the directory where the experiment in executed)
+            shutil.rmtree("output/")
         return
 
     def unload(self, device):
