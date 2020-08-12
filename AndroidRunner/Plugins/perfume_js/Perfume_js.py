@@ -30,13 +30,13 @@ class Perfume_js(Profiler):
         stop_server()
 
     def collect_results(self, device, path=None):
-        perfumeOutputFiles= os.listdir("output")
+        if(os.path.isdir("output")):#check if the folder is created, sometimes if the internet connection is done server.py won't create the folder
+            perfumeOutputFiles= os.listdir("output")
 
-        for onefile in perfumeOutputFiles:
-            if any(metr in onefile for metr in self.metrics):
-                newFilesDestination= shutil.move("output/"+onefile,self.output_dir)
-        shutil.rmtree("output/")
-
+            for onefile in perfumeOutputFiles:
+                if any(metr in onefile for metr in self.metrics):
+                    newFilesDestination= shutil.move("output/"+onefile,self.output_dir)
+            shutil.rmtree("output/")
     def set_output(self, output_dir):
         self.output_dir = output_dir
 
