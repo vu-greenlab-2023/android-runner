@@ -53,7 +53,7 @@ Below shows an example of the plugin setup in the configuration file:
     }
 ```
 
-**metrics** *Array* The metrics that should be collected throughout the duration of the experiment
+**metrics** *Array* metrics/data that should be collected throughout the duration of the experiment
 
 ## Notes
 
