@@ -6,7 +6,7 @@ The plugin is used to collect several field data using the [perfume.js](https://
 * Both the Android device and the machine should have internet connection.
 * The browser version used within the Android device should support the attribute ['supportedEnteryType'](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver) to collect certain data (e.g. FP and FCP).
 
-##Installation
+## Installation
 * [BeautifulSoup](https://pypi.org/project/beautifulsoup4/)
 
 ```bash
