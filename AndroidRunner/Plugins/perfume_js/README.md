@@ -53,9 +53,9 @@ Below shows an example of the plugin setup in the configuration file:
     }
 ```
 
-**metrics** Array The metrics that should be collected throughout the duration of the experiment
+**metrics** *Array* The metrics that should be collected throughout the duration of the experiment
 
-##Notes
+## Notes
 
 * If the network connection(internet connection) is changed to a different network, then the IP address injected within the Web applications should also be changed.
 * If FP and FCP data are important for the experiment to be collected, make sure that the broswer selected support `supportedEnteryType` as mentioned earlier.
