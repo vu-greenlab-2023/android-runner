@@ -9,6 +9,10 @@ networkInf = {'downlink': 0, 'effectiveType': 0, 'rtt':0, 'saveData':False}
 storageEstimate = {'quota':0, 'usage':0, 'caches':0, 'indexedDB':0, 'serviceWorker':0}
 fpResult = {'fp':0}
 fcpResult = {'fcp':0}
+fidResult = {'fid':0}
+lcpResult = {'lcp':0}
+clsResult = {'cls':0}
+tbtResult = {'tbt':0}
 httpd = 0
 
 class TestHandler(BaseHTTPRequestHandler):
@@ -47,6 +51,18 @@ class TestHandler(BaseHTTPRequestHandler):
             if 'fcp' in data_string:
                fcpResult['fcp'] = data_string.split("fcp\",\"data\":")[1].split(",\"eventProperties",1)[0]
 
+            if 'fid' in data_string:
+               fidResult['fid'] = data_string.split("fid\",\"data\":")[1].split(",\"eventProperties",1)[0]
+
+            if 'lcp' in data_string:
+               lcpResult['lcp'] = data_string.split("lcp\",\"data\":")[1].split(",\"eventProperties",1)[0]
+
+            if 'cls' in data_string:
+               clsResult['cls'] = data_string.split("cls\",\"data\":")[1].split(",\"eventProperties",1)[0]
+
+            if 'tbt' in data_string:
+               tbtResult['tbt'] = data_string.split("tbt\",\"data\":")[1].split(",\"eventProperties",1)[0]
+
             outputDir = "output"
 
             if not os.path.exists(outputDir):
@@ -76,6 +92,22 @@ class TestHandler(BaseHTTPRequestHandler):
                   w = csv.DictWriter(f, fcpResult.keys())
                   w.writeheader()
                   w.writerow(fcpResult)
+               with open(outputDir + '/fid_results_{}.csv'.format(time.strftime('%Y.%m.%d_%H%M%S')), 'w') as f:  # Just use 'w' mode in 3.x 'w' mode in 3.x
+                  w = csv.DictWriter(f, fidResult.keys())
+                  w.writeheader()
+                  w.writerow(fidResult)
+               with open(outputDir + '/lcp_results_{}.csv'.format(time.strftime('%Y.%m.%d_%H%M%S')), 'w') as f:  # Just use 'w' mode in 3.x 'w' mode in 3.x
+                  w = csv.DictWriter(f, lcpResult.keys())
+                  w.writeheader()
+                  w.writerow(lcpResult)
+               with open(outputDir + '/cls_results_{}.csv'.format(time.strftime('%Y.%m.%d_%H%M%S')), 'w') as f:  # Just use 'w' mode in 3.x 'w' mode in 3.x
+                  w = csv.DictWriter(f, clsResult.keys())
+                  w.writeheader()
+                  w.writerow(clsResult)
+               with open(outputDir + '/tbt_results_{}.csv'.format(time.strftime('%Y.%m.%d_%H%M%S')), 'w') as f:  # Just use 'w' mode in 3.x 'w' mode in 3.x
+                  w = csv.DictWriter(f, tbtResult.keys())
+                  w.writeheader()
+                  w.writerow(tbtResult)
 
                print(data_string)
 
