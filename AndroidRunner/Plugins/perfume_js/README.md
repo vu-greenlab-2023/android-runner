@@ -44,7 +44,7 @@ python3 AddJS.py path_to_directory_containing_all_WebApps http://IP:8080/
 ```
 
 ## Configuration
-Below shows an example of the plugin setup in the configuration file:
+Below shows an example of the plugin setup in the configuration file(**Note**: Also available for fid, lcp, cls and tbt):
 
 ```
   "profilers":{
