@@ -12,15 +12,27 @@ This framework requires Python 3 along with MacOS or Linux.  Current and former 
 3. Type `cd android-runner` to enter the framework's main directory.  Now, add a remote tracker to the parent repository with `git remote add upstream https://github.com/S2-group/android-runner`.  This is useful in case any major changes occur to the parent directory that may affect your project.  `git remote -vv` should now show *origin* and *upstream*.
 4. Create a virtual environment: `python3 -m venv /path/`.  This can be anywhere on your machine.  Activate it with `source /path/bin/activate`.
 5. Install dependencies.
-    1. With `sudo`
+    - On Linux
         - Android Debug Bridge (`sudo apt install android-tools-adb`)
         - Android SDK Tools (`sudo apt install monkeyrunner`)
         - JDK 8 (NOT JDK 9) (`sudo apt install openjdk-8-jre`)
             - See [this](https://askubuntu.com/questions/740757/switch-between-multiple-java-versions) for switching between java versions
         - lxml (`sudo apt install python-lxml`)
-    2. Within Android Runner's main directory
+    - On Mac OS
+        - Make sure you have <a href="https://brew.sh/">Homebrew</a> installed
+        - `brew cask install homebrew/cask-versions/adoptopenjdk8 android-sdk android-platform-tools`
+        - `brew install libxml2`
+        - Run `java -version`, if you are running a different version than 1.8/8:
+            - `brew install jenv`
+            - Run `/usr/libexec/java_home -V` to see the location of your Java environments
+            - Copy the location of your AdoptOpenJDK8 environment
+            - Run `jenv add <AdoptOpenJDK8_path>`
+            - Run `jenv global 1.8`
+            - Restart terminal and verify your Java version with `java -version`, it should output `openjdk version "1.8.0_265"`
+        - Verify that monkeyrunner works with `monkeyrunner --version`, it should output unrecognized argument and no other errors
+    1. Within Android Runner's main directory
         - `pip install -r requirements.txt`  
-    3. For creating or editing unit tests to ensure pull request passes TravisCI
+    2. For creating or editing unit tests to ensure pull request passes TravisCI
         - `pip install pytest`
         - `pip install mock`
 
