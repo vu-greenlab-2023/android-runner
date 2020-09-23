@@ -20,7 +20,7 @@ def aggregate_trepn_final(logs_dir):
 
     runs = []
     for run_file in [f for f in os.listdir(logs_dir) if os.path.isfile(os.path.join(logs_dir, f))]:
-        with open(os.path.join(logs_dir, run_file), 'rb') as run:
+        with open(os.path.join(logs_dir, run_file), 'r') as run:
             run_dict = {}
             reader = csv.DictReader(run)
             column_readers = split_reader(reader)
