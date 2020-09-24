@@ -120,31 +120,13 @@ class Device:
         Adb.shell(self.id, 'dumpsys battery reset')
 
     def current_activity(self):
-        """Returns the current focused activity on the system"""
-        # https://github.com/aldonin/appium-adb/blob/7b4ed3e7e2b384333bb85f8a2952a3083873a90e/lib/adb.js#L1278
-        windows = Adb.shell(self.id, 'dumpsys window windows')
-        null_re = r'mFocusedApp=null'
-        # https://regex101.com/r/xZ8vF7/1
-        current_focus_re = r'mCurrentFocus.+\s([^\s\/\}]+)\/[^\s\/\}]+(\.[^\s\/\}]+)}'
-        focused_app_re = r'mFocusedApp.+Record\{.*\s([^\s\/\}]+)\/([^\s\/\}\,]+)(\s[^\s\/\}]+)*\}'
-        match = None
-        found_null = False
-        for line in windows.split('\n'):
-            current_focus = re.search(current_focus_re, line)
-            focused_app = re.search(focused_app_re, line)
-            if current_focus:
-                match = current_focus
-            elif focused_app and match is None:
-                match = focused_app
-            elif re.search(null_re, line):
-                found_null = True
-        if match:
-            result = match.group(1).strip()
+        """Newer Android 10 does not have mCurrentFocus and mFocusedApp. Different approach to get the current activity"""
+        recent_activity = Adb.shell(self.id,'dumpsys activity recents | grep "Recent #0" | cut -d "=" -f2 | grep -o -p "[a-z|.]*"')
+
+        if recent_activity:
+            result = recent_activity
             self.logger.debug('Current activity: %s' % result)
             return result
-        elif found_null:
-            self.logger.debug('Current activity: null')
-            return None
         else:
             self.logger.error('Results from dumpsys window windows: \n%s' % windows)
             raise AdbError('Could not parse activity from dumpsys')
