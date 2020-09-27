@@ -25,7 +25,7 @@ If Android Runner is helping your research, consider to cite it as follows, than
 ``` 
 @inproceedings{A_Mobile_2020,
   title={{A Framework for the Automatic Execution of Measurement-based Experiments on Android Devices}},
-  author={Ivano Malavolta and Eoin Maritno Grua and Cheng-Yu Lam and Randy de Vries and Franky Tan and Eric Zielinski and Michael Peters and Luuk Kaandorp},
+  author={Ivano Malavolta and Eoin Martino Grua and Cheng-Yu Lam and Randy de Vries and Franky Tan and Eric Zielinski and Michael Peters and Luuk Kaandorp},
   booktitle={35th IEEE/ACM International Conference on Automated Software Engineering Workshops (ASEW '20)},
   year={2020},
   url= {https://github.com/S2-group/android-runner/blob/master/documentation/A_Mobile_2020.pdf},
