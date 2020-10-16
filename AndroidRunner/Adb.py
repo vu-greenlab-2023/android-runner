@@ -1,8 +1,11 @@
 import logging
 import os.path as op
+import os, glob
+import zipfile
 from time import sleep
 
 from .pyand import ADB
+from AndroidRunner.util import ConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +73,42 @@ def list_apps(device_id):
     return shell(device_id, 'pm list packages').replace('package:', '').split()
 
 
-# noinspection PyProtectedMember
 def install(device_id, apk, replace=True, all_permissions=True):
     filename = op.basename(apk)
     logger.debug('%s: Installing "%s"' % (device_id, filename))
     adb.set_target_by_name(device_id)
-    cmd = 'install'
+
+    # get extension filename
+    extension = op.splitext(apk)[-1].lower()
+
+    if extension == '.xapk':
+        cmd = 'install-multiple'
+        android_runner_dir = os.getcwd()
+        # get path of directory apks will be unzipped into.
+        path_apks_to_be_installed = op.splitext(apk)[0].lower()
+        with zipfile.ZipFile(apk, 'r') as zip_ref:
+            if not op.exists(path_apks_to_be_installed):
+                os.makedirs(path_apks_to_be_installed)
+            zip_ref.extractall(path_apks_to_be_installed)
+
+        os.chdir(path_apks_to_be_installed)
+
+        current_working_directory = os.getcwd()
+
+        apk_files = glob.glob('*.apk')
+
+        if not apk_files:
+            raise ConfigError('No apks found in xapk')
+
+        apk_files_paths = [op.join(current_working_directory, apk_file) for apk_file in apk_files]
+
+        # arguments of install-multiple
+        apk = ' '.join(apk_files_paths)
+        logger.info('installing APKs %s' % apk)
+        os.chdir(android_runner_dir) # go back to android runner dir
+    else:
+        cmd = 'install'
+        
     if replace:
         cmd += ' -r'
     if all_permissions:
