@@ -743,7 +743,7 @@ class TestAdb(object):
         mock_adb._ADB__output = 'succes'
         Adb.adb = mock_adb
         device_id = 123
-        apk = 'test_apk.xapk'
+        apk = 'test/test_apk.xapk'
 
         getcwd.return_value = 'test'
         result = Adb.install(device_id, apk)
