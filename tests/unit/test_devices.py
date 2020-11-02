@@ -737,6 +737,19 @@ class TestAdb(object):
         expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -r -g {}'.format(apk))]
         assert mock_adb.mock_calls == expected_calls
 
+    def test_install_multiple_default(self):
+        mock_adb = Mock()
+        mock_adb._ADB__output = 'succes'
+        Adb.adb = mock_adb
+        device_id = 123
+        apk = 'test_apk.xapk'
+
+        result = Adb.install(device_id, apk)
+
+        assert result == 'succes'
+        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install-multiple -r -g {}'.format(apk))]
+        assert mock_adb.mock_calls == expected_calls
+
     def test_install_no_replace(self):
         mock_adb = Mock()
         mock_adb._ADB__output = 'succes'
