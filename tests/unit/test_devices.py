@@ -737,9 +737,9 @@ class TestAdb(object):
         expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -r -g {}'.format(apk))]
         assert mock_adb.mock_calls == expected_calls
 
-    @patch('test_devices.os.getcwd')
-    @patch('test_devices.os.chdir')
-    @patch('test_devices.os.makedirs')
+    @patch('os.getcwd')
+    @patch('os.chdir')
+    @patch('os.makedirs')
     def test_install_multiple_default(self):
         mock_adb = Mock()
         mock_adb._ADB__output = 'succes'
