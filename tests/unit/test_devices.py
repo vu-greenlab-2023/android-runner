@@ -738,8 +738,8 @@ class TestAdb(object):
         assert mock_adb.mock_calls == expected_calls
 
     
-    @patch('Adb.os.listdir')
-    @patch('Adb.os.getcwd')
+    @patch('os.listdir')
+    @patch('os.getcwd')
     def test_install_multiple_default(self, listdir, getcwd):
         mock_adb = Mock()
         mock_adb._ADB__output = 'succes'
