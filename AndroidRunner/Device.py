@@ -128,7 +128,7 @@ class Device:
             self.logger.debug('Current activity: %s' % result)
             return result
         else:
-            self.logger.error('Results from dumpsys window windows: \n%s' % windows)
+            self.logger.error(f'Results from dumpsys: {recent_activity}')
             raise AdbError('Could not parse activity from dumpsys')
 
     def launch_package(self, package):

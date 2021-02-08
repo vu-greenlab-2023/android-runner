@@ -337,29 +337,8 @@ class TestDevice(object):
         adb_shell_su.assert_called_once_with(123456789, 'echo 123456 > test/file')
 
     @patch('AndroidRunner.Adb.shell')
-    def test_current_activity_current_focus(self, adb_shell, device):
-        adb_shell.return_value = 'mCurrentFocus=Window{28d47066 u0 com.android.chrome/org.chromium.chrome.browser.' \
-                                 'ChromeTabbedActivity}\nmFocusedApp=Window{3078b3ad u0 com.sonyericsson.usbux/com.' \
-                                 'sonyericsson.usbux.settings.ConnectivitySettingsActivity}'
-        current_activity = device.current_activity()
-        assert current_activity == 'com.android.chrome'
-
-    @patch('AndroidRunner.Adb.shell')
-    def test_current_activity_focused_app(self, adb_shell, device):
-        adb_shell.return_value = 'mFocusedApp=AppWindowToken{ce6dd8c token=Token{31892bf ActivityRecord{21e5e0de u0 ' \
-                                 'com.android.chrome/org.chromium.chrome.browser.ChromeTabbedActivity t25385}}}'
-        current_activity = device.current_activity()
-        assert current_activity == 'com.android.chrome'
-
-    @patch('AndroidRunner.Adb.shell')
-    def test_current_activity_none(self, adb_shell, device):
-        adb_shell.return_value = 'mFocusedApp=null'
-        current_activity = device.current_activity()
-        assert current_activity is None
-
-    @patch('AndroidRunner.Adb.shell')
     def test_current_activity_error(self, adb_shell, device):
-        adb_shell.return_value = 'mFocusedApp=ajislvfhbljhglalkjasfdhdhg'
+        adb_shell.return_value = None
         with pytest.raises(Adb.AdbError):
             device.current_activity()
 
