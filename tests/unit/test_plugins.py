@@ -3,7 +3,7 @@ import os.path as op
 
 import pytest
 from mock import Mock, call, patch
-
+from lxml.etree import ElementTree
 import paths
 from AndroidRunner.Plugins.android.Android import Android
 from AndroidRunner.Plugins.batterystats.Batterystats import Batterystats
@@ -840,8 +840,13 @@ class TestTrepnPlugin(object):
     def test_dependencies(self, trepn_plugin):
         assert trepn_plugin.dependencies() == ['com.quicinc.trepn']
 
+    def test_override_preferences_preference_not_in_params(self, trepn_plugin):
+        test_params = {'NOTpreferences': {'profiling_interval': 300}, 'data_points': ['battery_power', 'mem_usage']}
+        elem_tree = ElementTree()
+        assert trepn_plugin.override_preferences(test_params, elem_tree) == elem_tree
+
     def test_build_preferences(self, trepn_plugin, tmpdir, fixture_dir):
-        test_params = {'preferences': {'profiling_interval': 300}, 'data_points': ['battery_power', 'mem_usage']}
+        test_params = {'preferences': {'profiling_interval': 300, 'temperature_units': 'Celsius'}, 'data_points': ['battery_power', 'mem_usage']}
         trepn_plugin.paths['OUTPUT_DIR'] = str(tmpdir)
 
         trepn_plugin.build_preferences(test_params)
