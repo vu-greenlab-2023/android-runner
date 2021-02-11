@@ -337,6 +337,11 @@ class TestDevice(object):
         adb_shell_su.assert_called_once_with(123456789, 'echo 123456 > test/file')
 
     @patch('AndroidRunner.Adb.shell')
+    def test_current_activity_success(self, adb_shell, device):
+        adb_shell.return_value = "com.android.chrome"
+        assert device.current_activity() == "com.android.chrome"
+
+    @patch('AndroidRunner.Adb.shell')
     def test_current_activity_error(self, adb_shell, device):
         adb_shell.return_value = None
         with pytest.raises(Adb.AdbError):
