@@ -98,6 +98,7 @@ A JSON object to describe the devices to be used and their arguments. Below are 
   "devices": {
     "nexus6p": {
       "root_disable_charging": "True",
+      "logcat_buffer_size" : 64,
       "charging_disabled_value": 0,
       "usb_charging_disabled_file": "/sys/class/power_supply/usb/device/charge",
       "device_settings_reqs": {"e.www.gyroscopetest": ["location_high_accuracy", ...], ...}
@@ -119,6 +120,8 @@ A JSON object to describe the devices to be used and their arguments. Below are 
     "nexus6p": {}
   }
 ```
+The **logcat_buffer_size** option specifies the size of the logcat buffer in KB (1KB = 1024 Bytes) for the given device. This must be an integer between 64 and 262144 (which is 256MB in KB). If this value is not set a default value of 131072KB (128MB) is used.
+
 Note that the last two examples result in the same behaviour.
 
 The **root_disable_charging** option specifies if the devices needs to be root charging disabled by writing the **charging_disabled_value** to the **usb_charging_disabled_file**. Different devices have different values for the **charging_disabled_value** and **usb_charging_disabled_file**, so be careful when using this feature. Also keep an eye out on the battery percentage when using this feature. If the battery dies when the charging is root disabled, it becomes impossible to charge the device via USB.
