@@ -11,6 +11,10 @@ import subprocess
 
 
 class Device:
+    LOGCAT_BUFFER_SIZE_MIN = 64
+    LOGCAT_BUFFER_SIZE_MAX = 262144 # 256MB = 256 * 1024KB = 262144KB
+    LOGCAT_BUFFER_SIZE_DEFAULT = 131072  # 128MB = 128 * 1024KB = 131072KB
+
     def __init__(self, name, device_id, settings):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.name = name
@@ -24,6 +28,43 @@ class Device:
         if self.power_device:
             subprocess.call([self.power_device["py_path"], self.power_device["script_path"], self.power_device["vout"], self.power_device["serial_num"]])
         Adb.connect(device_id)
+
+        # Set logcat buffer size for the device based on logcat_buffer_size set in the config file. If it is not
+        # defined use the default value.
+        self.logcat_buffer_size = settings.get('logcat_buffer_size', Device.LOGCAT_BUFFER_SIZE_DEFAULT)
+
+    @property
+    def logcat_buffer_size(self):
+        return self._logcat_buffer_size
+
+    @logcat_buffer_size.setter
+    def logcat_buffer_size(self, size):
+        """ Sets the logcat buffer size for the current device.
+
+        Parameters
+        ----------
+        size : int
+            The size of the logcat buffer in KiloBytes (1024 bytes).
+            Minimum size is 64KB
+            Maximum size is 256MB (262144KB as 256 * 1024)
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(size, int):
+            raise ConfigError("Given logcat buffer size needs to be an integer.")
+
+        if not Device.LOGCAT_BUFFER_SIZE_MIN <= size <= Device.LOGCAT_BUFFER_SIZE_MAX:
+            raise ConfigError(f"Given logcat buffer size is {size}KB. It should be"
+                              f" between {Device.LOGCAT_BUFFER_SIZE_MIN}KB"
+                              f" and {Device.LOGCAT_BUFFER_SIZE_MAX}KB (inclusive).")
+
+        self.logger.info(f'Setting logcat buffer size to {size}K')
+        self._logcat_buffer_size = size
+
+        # Please note that logcat uses K to refer to KB.
+        Adb.shell(self.id, f'logcat -G {self._logcat_buffer_size}K')
 
     def configure_settings_device(self, app, enable=True):
         if self.device_settings_reqs is not None:

@@ -56,7 +56,6 @@ class Experiment(object):
 
     def get_progress_xml_file(self):
         return self.progress.progress_xml_file
-
     def update_progress(self):
         self.progress.write_progress_to_file()
         result_data_path = op.join(paths.BASE_OUTPUT_DIR, 'data')
