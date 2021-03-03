@@ -171,16 +171,33 @@ def pull(device_id, remote, local):
         adb._ADB__error = None
     return adb._ADB__output
 
-
 def logcat(device_id, regex=None):
-    # https://developer.android.com/studio/command-line/logcat.html#Syntax
-    # -d prints to screen and exits
-    params = '-d'
-    if regex is not None:
-        params += ' -e %s' % regex
-    adb.set_target_by_name(device_id)
-    return adb.get_logcat(lcfilter=params)
+    """Returns the logcat log for the given device.
 
+    When regex is provided, only return log entries that match the regex.
+
+    Grep is used to handle regular expressions. While the logcat command itself supports regular expressions using
+    the -e flag it is not available on all devices.
+    Using grep circumvents this problem provided that the host OS has grep installed.
+
+    Parameters
+    ----------
+    device_id : string
+        ID of the device we want to see the logcat log of.
+    regex : string, optional, default=None
+        The regular expression
+
+    Returns
+    -------
+    string
+        The full logcat log or the logcat entries that match the regular expression.
+    """
+    # -d prints to screen and exits
+    params = 'logcat -d'
+    if regex is not None:
+        params += f' | grep "{regex}"'
+    res = shell(device_id, params)
+    return res
 
 def reset(cmd):
     if cmd:

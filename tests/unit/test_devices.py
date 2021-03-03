@@ -932,22 +932,21 @@ class TestAdb(object):
 
     def test_logcat_no_regex(self):
         mock_adb = Mock()
-        mock_adb.get_logcat.return_value = 'get_logcat output'
-        Adb.adb = mock_adb
+        mock_adb.return_value = 'get_logcat output'
+        Adb.shell = mock_adb
 
         device_id = 123
 
         result = Adb.logcat(device_id)
 
         assert result == 'get_logcat output'
-        expected_calls = [call.set_target_by_name(device_id),
-                          call.get_logcat(lcfilter='-d')]
+        expected_calls = [call.shell(device_id, f"logcat -d")]
         assert mock_adb.mock_calls == expected_calls
 
     def test_logcat_with_regex(self):
         mock_adb = Mock()
-        mock_adb.get_logcat.return_value = 'get_logcat output'
-        Adb.adb = mock_adb
+        mock_adb.return_value = 'get_logcat output'
+        Adb.shell = mock_adb
 
         test_regex = '[a-zA-Z]+'
         device_id = 123
@@ -955,8 +954,7 @@ class TestAdb(object):
         result = Adb.logcat(device_id, test_regex)
 
         assert result == 'get_logcat output'
-        expected_calls = [call.set_target_by_name(device_id),
-                          call.get_logcat(lcfilter='-d -e {}'.format(test_regex))]
+        expected_calls = [call.shell(device_id, f'logcat -d | grep "{test_regex}"')]
         assert mock_adb.mock_calls == expected_calls
 
     def test_reset_true(self):
