@@ -13,8 +13,10 @@ class TestDevice(object):
 
     @pytest.fixture()
     @patch('AndroidRunner.Adb.connect')
-    def device(self, adb_connect):
+    @patch('AndroidRunner.Adb.shell')
+    def device(self, adb_shell, adb_connect):
         adb_connect.return_value = None
+        adb_shell.return_value = None
         name = 'fake_device'
         device_id = 123456789
         device_settings = {}
@@ -23,8 +25,10 @@ class TestDevice(object):
 
     @pytest.fixture()
     @patch('AndroidRunner.Adb.connect')
-    def device_root(self, adb_connect):
+    @patch('AndroidRunner.Adb.shell')
+    def device_root(self, adb_shell, adb_connect):
         adb_connect.return_value = None
+        adb_shell.return_value = None
         name = 'fake_device'
         device_id = 123456789
         device_settings = {'root_disable_charging': True,
@@ -34,8 +38,10 @@ class TestDevice(object):
 
     @pytest.fixture()
     @patch('AndroidRunner.Adb.connect')
-    def device_with_app_settings(self, adb_connect):
+    @patch('AndroidRunner.Adb.shell')
+    def device_with_app_settings(self, adb_shell, adb_connect):
         adb_connect.return_value = None
+        adb_shell.return_value = None
         name = 'fake_device'
         device_id = 123456789
         device_settings = {"device_settings_reqs": {"app1": ["setting_1"], "app2": ["setting_1", "setting_2"]}}
@@ -43,12 +49,15 @@ class TestDevice(object):
         return Device(name, device_id, device_settings)
 
     @patch('AndroidRunner.Adb.connect')
-    def test_init(self, adb_connect):
+    @patch('AndroidRunner.Adb.shell')
+    def test_init(self, adb_shell, adb_connect):
         name = 'fake_device'
         device_id = 123456789
+        logcat_buffer_size = 64
         device_settings = {'root_disable_charging': True,
                            'charging_disabled_value': '0',
                            'usb_charging_disabled_file': 'test/file',
+                           'logcat_buffer_size' : logcat_buffer_size,
                            'power_device': {
                                 'script_path': 'fake/path',
                                 'py_path': 'python',
@@ -70,7 +79,9 @@ class TestDevice(object):
         assert device.power_device['script_path'] == 'fake/path'
         assert device.power_device['py_path'] == 'python'
         assert device.device_settings_reqs == {'app1': ['a, b'], 'app2': ['c']}
+        assert device.logcat_buffer_size == logcat_buffer_size
         adb_connect.assert_called_once_with(device_id)
+        adb_shell.assert_called_once_with(device_id, f"logcat -G {logcat_buffer_size}K")
 
     @patch('AndroidRunner.Adb.configure_settings')
     @patch('logging.Logger.info')
@@ -134,6 +145,29 @@ class TestDevice(object):
         device.install('fake.apk')
 
         adb_install.assert_called_once_with(123456789, 'fake.apk')
+
+    @patch("AndroidRunner.Adb.shell")
+    @pytest.mark.parametrize('size', [Device.LOGCAT_BUFFER_SIZE_MIN,
+                                      int((Device.LOGCAT_BUFFER_SIZE_MIN + Device.LOGCAT_BUFFER_SIZE_MAX)/2),
+                                      Device.LOGCAT_BUFFER_SIZE_MAX])
+    def test_set_logcat_buffer_size_success(self, adb_shell, device, size):
+        accepted_logcat_buffer_size = size
+        logcat_command = f'logcat -G {accepted_logcat_buffer_size}K'
+
+        device.logcat_buffer_size = accepted_logcat_buffer_size
+
+        adb_shell.assert_called_once_with(123456789, logcat_command)
+        assert device.logcat_buffer_size == accepted_logcat_buffer_size
+
+    @pytest.mark.parametrize('size', [Device.LOGCAT_BUFFER_SIZE_MIN-1, Device.LOGCAT_BUFFER_SIZE_MAX+1])
+    def test_set_logcat_buffer_size_failure_size_not_in_range(self, device, size):
+        with pytest.raises(ConfigError):
+            device.logcat_buffer_size = size
+
+    @pytest.mark.parametrize('size', [f"{Device.LOGCAT_BUFFER_SIZE_MIN}", float(Device.LOGCAT_BUFFER_SIZE_MIN), ""])
+    def test_set_logcat_buffer_size_failure_wrong_type(self, device, size):
+        with pytest.raises(ConfigError):
+            device.logcat_buffer_size = size
 
     @patch('AndroidRunner.Adb.uninstall')
     def test_uninstall(self, adb_uninstall, device):
