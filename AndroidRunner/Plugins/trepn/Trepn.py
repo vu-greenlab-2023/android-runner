@@ -93,6 +93,30 @@ class Trepn(Profiler):
     def stop_profiling(self, device, **kwargs):
         device.shell('am broadcast -a com.quicinc.trepn.stop_profiling')
 
+    def file_exists_and_not_empty(self, device, path, csv_filename):
+        """ Checks whether the file <csv_filename> exists on the device <device> in the folder <path>
+            and that the file is not empty.
+
+
+        Parameters
+        ----------
+        device : Device
+            Device on which we want to check whether the file exists.
+        path : string, bytes
+            A string or bytes object representing a folder on the device.
+        csv_filename : string
+            The file
+
+        Returns
+        -------
+        bool
+            Whether the file exists and is not empty on the device.
+        """
+        ls = device.shell(f"ls {path}")
+        cat = device.shell(f"cat {os.path.join(path, csv_filename)}")
+
+        return (csv_filename in ls) and bool(cat)
+
     def collect_results(self, device):
         # Gives the latest result
         db = device.shell(r'ls %s | grep "\.db$"' % Trepn.DEVICE_PATH).strip().splitlines()
@@ -102,9 +126,17 @@ class Trepn(Profiler):
             device.shell('am broadcast -a com.quicinc.trepn.export_to_csv '
                          '-e com.quicinc.trepn.export_db_input_file "%s" '
                          '-e com.quicinc.trepn.export_csv_output_file "%s"' % (newest_db, csv_filename))
-            time.sleep(1)  # adb returns instantly, while the command takes time
+
+            # adb returns instantly, while the command takes time so we wait till Trepn converted the databsae to a
+            # csv file on the mobile device.
+            util.wait_until(self.file_exists_and_not_empty, 5, 1, device, Trepn.DEVICE_PATH, csv_filename)
+
             device.pull(op.join(Trepn.DEVICE_PATH, csv_filename), self.output_dir)
-            time.sleep(1)  # adb returns instantly, while the command takes time
+
+            # adb returns instantly, while the command takes time so we wait till the files are transferred from the
+            # device to the host.
+            util.wait_until(os.path.exists, 5, 1, op.join(self.output_dir, csv_filename))
+
             # Delete the originals
             device.shell('rm %s' % op.join(Trepn.DEVICE_PATH, newest_db))
             device.shell('rm %s' % op.join(Trepn.DEVICE_PATH, csv_filename))

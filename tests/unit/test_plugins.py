@@ -888,16 +888,18 @@ class TestTrepnPlugin(object):
 
         mock_device.shell.assert_called_once_with('am broadcast -a com.quicinc.trepn.stop_profiling')
 
-    @patch('time.sleep')
+    @patch('os.path.exists')
+    @patch('AndroidRunner.util.wait_until')
     @patch('AndroidRunner.Plugins.trepn.Trepn.Trepn.filter_results')
-    def test_collect_results(self, filter_results_mock, sleep_mock, trepn_plugin, mock_device, tmpdir):
+    def test_collect_results(self, filter_results_mock, wait_until_mock, os_path_mock, trepn_plugin, mock_device, tmpdir):
         tmpdir_str = str(tmpdir)
         trepn_plugin.output_dir = tmpdir_str
+        os_path_mock.return_value = True
         mock_device.id = '123'
         mock_device.shell.return_value = 'Trepn_2019.08.21_224812.db'
         mock_manager = Mock()
         mock_manager.attach_mock(mock_device, 'device_managed')
-        mock_manager.attach_mock(sleep_mock, 'sleep_managed')
+        mock_manager.attach_mock(wait_until_mock, 'wait_until_managed')
         mock_manager.attach_mock(filter_results_mock, 'filter_managed')
 
         trepn_plugin.collect_results(mock_device)
@@ -908,16 +910,43 @@ class TestTrepnPlugin(object):
                                                     '"Trepn_2019.08.21_224812.db" '
                                                     '-e com.quicinc.trepn.export_csv_output_file '
                                                     '"123_Trepn_2019.08.21_224812.csv"'),
-                          call.sleep_managed(1),
+                          call.wait_until_managed(trepn_plugin.file_exists_and_not_empty, 5, 1, mock_device, trepn_plugin.DEVICE_PATH, "123_Trepn_2019.08.21_224812.csv" ),
                           call.device_managed.pull(op.join(trepn_plugin.DEVICE_PATH, '123_Trepn_2019.08.21_224812.csv')
                                                    , tmpdir_str),
-                          call.sleep_managed(1),
+                          call.wait_until_managed(os_path_mock, 5, 1, op.join(trepn_plugin.output_dir, "123_Trepn_2019.08.21_224812.csv")),
                           call.device_managed.shell(
                               'rm %s' % op.join(trepn_plugin.DEVICE_PATH, 'Trepn_2019.08.21_224812.db')),
                           call.device_managed.shell(
                               'rm %s' % op.join(trepn_plugin.DEVICE_PATH, '123_Trepn_2019.08.21_224812.csv')),
                           call.filter_managed(op.join(tmpdir_str, '123_Trepn_2019.08.21_224812.csv'))]
         assert mock_manager.mock_calls == expected_calls
+
+    def test_file_exists_and_not_empty_file_found(self, mock_device, trepn_plugin):
+        path_ = "/sdcard/trepn/"
+        file_ = "123_Trepn_2019.08.21_224812.csv"
+
+        mock_device.shell.side_effect = [f"Other data {file_} other data", "Not empty file contents"]
+        res = trepn_plugin.file_exists_and_not_empty(mock_device, path_, file_)
+
+        assert res == True
+
+    def test_file_exists_and_not_empty_file_not_found(self, mock_device, trepn_plugin):
+        path_ = "/sdcard/trepn/"
+        file_ = "123_Trepn_2019.08.21_224812.csv"
+
+        mock_device.shell.side_effect = [f"Other data other data", "Not empty file contents"]
+        res = trepn_plugin.file_exists_and_not_empty(mock_device, path_, file_)
+
+        assert res == False
+
+    def test_file_exists_and_not_empty_file_empty(self, mock_device, trepn_plugin):
+        path_ = "/sdcard/trepn/"
+        file_ = "123_Trepn_2019.08.21_224812.csv"
+
+        mock_device.shell.side_effect = [f"Other {file_} data other data", ""]
+        res = trepn_plugin.file_exists_and_not_empty(mock_device, path_, file_)
+
+        assert res == False
 
     def test_read_csv(self, trepn_plugin, fixture_dir):
         test_file = op.join(fixture_dir, 'test_trepn_data_to_filter.csv')

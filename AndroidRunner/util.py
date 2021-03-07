@@ -1,5 +1,6 @@
 import errno
 import json
+import time
 import os
 import re
 from collections import OrderedDict
@@ -54,6 +55,37 @@ def makedirs(path):
         if e.errno != errno.EEXIST:
             raise
 
+def wait_until(function, timeout, period=0.25, *args):
+    """ Block/suspend/sleep for a maximum of <timeout> seconds until function <function> returns True. Execute <function> every
+    <period> seconds. If <function> still returns False after <timeout> seconds throw a TimeourError.
+
+    Parameters
+    ----------
+    function : callable
+        A Python function or method
+    timeout : float
+        Time in seconds until TimeoutError is thrown.
+    period : float
+        Time in seconds between each <function> call.
+    args : any
+        Arguments that are passed to <function>.
+
+    Raises
+    -------
+    TimeoutError
+        If <function> still returns False after <timeout> seconds.
+
+    Returns
+    -------
+    None
+        Nothing is returned.
+    """
+    must_end = time.time() + timeout
+    while time.time() < must_end:
+        if function(*args):
+            return
+        time.sleep(period)
+    raise TimeoutError
 
 # noinspection PyTypeChecker
 def slugify_dir(value):

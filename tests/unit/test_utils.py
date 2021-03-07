@@ -47,6 +47,23 @@ class TestUtilClass(object):
             util.load_json(tmp_file)
         assert "Permission denied" in str(except_result.value)
 
+    @patch("time.sleep")
+    def test_wait_until_call_succeeded(self, time_sleep_mock):
+        func_ = Mock()
+        func_.side_effect = [False, False, True]
+
+        util.wait_until(func_, 5)
+
+        assert func_.call_count == 3
+
+    @patch("time.sleep")
+    def test_wait_until_call_timeout_error(self, time_sleep_mock):
+        func_ = Mock()
+        func_.return_value = False
+
+        with pytest.raises(TimeoutError):
+            util.wait_until(func_, 5)
+
     def test_makedirs_succes(self, tmpdir):
         dir_path = op.join(str(tmpdir), 'test1')
         assert op.isdir(dir_path) is False
