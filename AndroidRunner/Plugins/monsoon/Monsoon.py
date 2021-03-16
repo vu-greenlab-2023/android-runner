@@ -24,6 +24,9 @@ class Monsoon(Profiler):
 
     def start_profiling(self, device, **kwargs):
         """Start the profiling process"""
+
+        # Quickly let the mobile device sleep and wake up so a run can take up to 30 minutes.
+        device.shell("input keyevent KEYCODE_SLEEP")
         device.shell("input keyevent KEYCODE_WAKEUP")
         time.sleep(5)
         self.profile = True
@@ -32,8 +35,13 @@ class Monsoon(Profiler):
     def stop_profiling(self, device, **kwargs):
         """Stop the profiling process"""
         self.results = power_meter.stop()
-        device.shell("input keyevent KEYCODE_SLEEP")
         self.profile = False
+
+        # Quickly let the mobile device sleep and wake up so the device is awake for 30 minutes.
+        # This solves the issue of certain commands sent to the device blocking the execution of the program.
+        device.shell("input keyevent KEYCODE_SLEEP")
+        device.shell("input keyevent KEYCODE_WAKEUP")
+        time.sleep(5)
 
     def collect_results(self, device):
         """Collect the data and clean up extra files on the device, save data in location set by 'set_output' """
