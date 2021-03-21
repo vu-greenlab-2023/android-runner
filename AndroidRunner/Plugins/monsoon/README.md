@@ -65,11 +65,12 @@ Follow these instructions to power on the phone:
 
 ## Things to know before running first real experiment
 1. The field `reset_adb_among_runs` should either be set to *false* or not be included in the configuration file.
-2. The `duration` of each run must not exceed 30 minutes, or 1,800,000 milliseconds if the phone screen needs to be on during the experiment.  Note, `time_between_run` is not affected by this requirement.
-3. Don't forget to add the phone's IP address and port to `devices.json`.
-4. For best stability, make sure the device is as close to the router as possible.  The device may disconnect from the adb server if the WiFi connection isn't stable.
-5. It's not required to turn off Monsoon before changing the `vout` field.  Monsoon can adjust that while it's powered on.
-6. The script will create a csv file in the same directory that will get overwritten every time an experiment is run.  
+2. The `duration` of each run must not exceed 30 minutes, or 1,800,000 milliseconds if the phone screen needs to be on during the experiment.  
+3. It is advisable to keep the time period between the "profiler stop" event and "profiler start" event (so including the before_close, after_run, before_run and after_launch phases) not to exceed 30 minutes. Note, `time_between_run` **is** affected by this requirement. If this requirement is not satisfied some commands send to the device may freeze the execution of AR.
+4. Don't forget to add the phone's IP address and port to `devices.json`.
+5. For best stability, make sure the device is as close to the router as possible.  The device may disconnect from the adb server if the WiFi connection isn't stable.
+6. It's not required to turn off Monsoon before changing the `vout` field.  Monsoon can adjust that while it's powered on.
+7. The script will create a csv file in the same directory that will get overwritten every time an experiment is run.  
 
 ## Running the experiment
 It's time to run a real experiment.
