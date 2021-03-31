@@ -13,7 +13,7 @@ import subprocess
 class Device:
     LOGCAT_BUFFER_SIZE_MIN = 64
     LOGCAT_BUFFER_SIZE_MAX = 262144 # 256MB = 256 * 1024KB = 262144KB
-    LOGCAT_BUFFER_SIZE_DEFAULT = 131072  # 128MB = 128 * 1024KB = 131072KB
+    LOGCAT_BUFFER_SIZE_DEFAULT = 57344 # 56MB = 56 * 1024KB = 57344KB since Nexus 5X has limit of 56MB.
 
     def __init__(self, name, device_id, settings):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -41,12 +41,14 @@ class Device:
     def logcat_buffer_size(self, size):
         """ Sets the logcat buffer size for the current device.
 
+
         Parameters
         ----------
         size : int
             The size of the logcat buffer in KiloBytes (1024 bytes).
             Minimum size is 64KB
-            Maximum size is 256MB (262144KB as 256 * 1024)
+            Maximum size is 256MB (262144KB as 256 * 1024). While the maximum size differs from device to device, 256MB
+            is considered to be the upper limit.
 
         Returns
         -------
