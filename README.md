@@ -177,6 +177,7 @@ Currently, Android Runner contains the plugins listed below, they can immediatel
 | [frametimes](./AndroidRunner/Plugins/frametimes/) (Performance) | Collects frame rendering durations and the number of delayed frames with the technique used in [this article](https://dl.acm.org/doi/pdf/10.1145/2897073.2897100?casa_token=jD3bYLV001kAAAAA:OZiAzZFwtvSO-uK3hgWlz6iNVcTt6uYoT1UWroDEGhDHrEBvLbsIl4E13RhAtRK4IaEPd6putLTzzZw).              |
 | [gc](./AndroidRunner/Plugins/trepn/) (Performance)              | Collects the number of garbage collections as in [this article](https://dl.acm.org/doi/pdf/10.1145/2897073.2897100?casa_token=jD3bYLV001kAAAAA:OZiAzZFwtvSO-uK3hgWlz6iNVcTt6uYoT1UWroDEGhDHrEBvLbsIl4E13RhAtRK4IaEPd6putLTzzZw).                                                            |
 | [perfume_js](./AndroidRunner/Plugins/perfume_js/) (Performance)              | Collects performance metrics using the `Perfume.js` library, e.g. FP, FCP, NavigationTiming, storageEstimate and networkInformation.                                                            |
+| [Perfetto](./AndroidRunner/Plugins/perfetto) (mixed) | Collects data using [Perfetto](https://perfetto.dev/) which supports various data sources including memory, CPU, power and more.
 > Did you develop a plugin for Android Runner? You can [create a pull request](https://github.com/iivanoo/covid-apps-observer/pulls/new) in this repository and we will include it!
 
 
