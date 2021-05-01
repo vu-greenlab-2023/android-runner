@@ -1,4 +1,5 @@
 import errno
+import psutil
 import json
 import time
 import os
@@ -97,3 +98,20 @@ def slugify_dir(value):
     regex_pattern = r'[^\w]'
     slug = slugify(value, regex_pattern=regex_pattern)
     return slug
+
+def keyboardinterrupt_handler(func):
+    """ Decorator that ensures that a KeyBoardInterrupt is handled
+        cleanly by terminating the associated process.
+
+        Is necessary as a KeyBoardInterrupt is send to a process and all of its child processes.
+        Each process therefore needs its own handler.
+
+        Can be used by putting @keyboardinterrupt_handler above a function.
+    """
+    def inner_function(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except KeyboardInterrupt as e:
+            this_process = psutil.Process()
+            this_process.terminate()
+    return inner_function

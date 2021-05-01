@@ -45,6 +45,9 @@ class NativeExperiment(Experiment):
 
     def start_profiling(self, device, path, run, *args, **kwargs):
         self.profilers.start_profiling(device, app=self.package)
+
+    def interaction(self, device, path, run, *args, **kwargs):
+        super(NativeExperiment, self).interaction(device, path, run, *args, **kwargs)
         time.sleep(self.duration)
 
     def after_run(self, device, path, run, *args, **kwargs):

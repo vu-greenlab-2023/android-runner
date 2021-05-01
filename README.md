@@ -92,6 +92,37 @@ Restarts the adb connection after each run.  Default is *false*.
 **time_between_run** *positive integer*
 The time that the framework waits between 2 successive experiment runs. Default is 0.
 
+The **run_stopping_condition** makes it possible to stop the current run when a specific event is triggered. If no event is triggered the run will continue as usual. Right now there are 3 supported events. When the logcat_regex or post_request conditions are used users can also stop the run by using the stop() function call.
+
+1. A regex in the logcat is matched.
+
+      With the configuration below AR continuously checks if the device's logcat contains an entry matching the "\<expr\>" where "\<expr\>" is a regular expression. If this is the case the run will be stopped. Please note that the `regex` option is required to specify the regex.
+      ```js
+      "run_stopping_condition" : {"logcat_regex" : {"regex" : "<expr>"}}
+      ```
+2. The reception of an HTTP POST request.
+
+    With the configuration below AR will start a local webserver on port 2222 which accepts HTTP POST requests to stop the run. The payload of these HTTP POST requests are saved to the output directory. The file format will be .json if the Content-type header is `application/json` and .txt otherwise.
+    ```js
+    "run_stopping_condition" : {"post_request" : {"server_port" : 2222}}
+    ```
+    The `server_port` option is optional. If it is not provided the local webserver will be started on port 8000.
+
+3. A direct call of the stop() function on an Experiment instance.   
+
+    With the configuration below AR allows one to call the stop() method on an AndroidRunner.Experiment instance to stop the current run.  
+    ```js
+    "run_stopping_condition" : {"function" : {}}
+    ```
+    This can be useful in an interaction script when we want to stop the run if some condition holds. The current Experiment instance can be accessed by `args[0]`. An example which stops the run if "certain app" is installed on the device.
+    ```py
+    def main(device, *args, **kwargs):
+      if device.is_installed("certain app"):
+        args[0].stop()
+    ```
+
+
+
 **devices** *JSON*
 A JSON object to describe the devices to be used and their arguments. Below are several examples:
 ```js
