@@ -3,7 +3,7 @@ import os.path as op
 
 import pytest
 from mock import Mock, call, patch
-
+import time
 import paths
 from AndroidRunner.MonkeyReplay import MonkeyReplay, MonkeyReplayError
 from AndroidRunner.MonkeyRunner import MonkeyRunner
@@ -287,3 +287,14 @@ class TestScript(object):
         assert test_queue.put.call_count == 2
         assert 'NotImplementedError' in str(test_queue.put.call_args_list)
         assert 'script' in str(test_queue.put.call_args_list[1][0])
+
+    @patch("time.sleep")
+    def test_mp_logcat_regex_one_iteration(self, sleep, script_path):
+        fake_device = Mock()
+        fake_device.logcat_regex.side_effect = [False, True]
+        test_queue = Mock()
+        test_script = Python3(script_path)
+        test_script.mp_logcat_regex(test_queue, fake_device, "Test")
+
+        sleep.assert_called_once_with(1)
+        test_queue.put.assert_called_once_with("logcat")
