@@ -3,7 +3,7 @@ import os.path as op
 import time
 from os import remove, rmdir, walk
 from threading import Thread
-
+from AndroidRunner.USBHandler import USBHandler
 from . import Tests
 from . import Adb
 import paths
@@ -38,6 +38,8 @@ class Experiment(object):
         Tests.check_dependencies(self.devices, self.profilers.dependencies())
         self.output_root = paths.OUTPUT_DIR
         self.result_file_structure = None
+        self.usb_handler_config = config.get("usb_handler", None)
+        self.usb_handler = USBHandler(self.usb_handler_config)
         if restart:
             for device in self.devices:
                 self.prepare_device(device, restart=True)
@@ -50,6 +52,7 @@ class Experiment(object):
 
     def cleanup(self, device):
         """Cleans up the changes on the devices"""
+        self.usb_handler.enable_usb()
         device.plug()
         self.profilers.stop_profiling(device)
         self.profilers.unload(device)
@@ -172,9 +175,15 @@ class Experiment(object):
 
     def run(self, device, path, run, dummy):
         self.before_run(device, path, run)
+
+        self.usb_handler.disable_usb()
         self.start_profiling(device, path, run)
+
         self.interaction(device, path, run)
+
         self.stop_profiling(device, path, run)
+        self.usb_handler.enable_usb()
+
         self.after_run(device, path, run)
 
     def before_experiment(self, device, *args, **kwargs):

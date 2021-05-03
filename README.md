@@ -92,6 +92,22 @@ Restarts the adb connection after each run.  Default is *false*.
 **time_between_run** *positive integer*
 The time that the framework waits between 2 successive experiment runs. Default is 0.
 
+The **usb_handler** option enables Android Runner to disable the USB connection during each run (while AR is profiling) and enables it after the run. This allows
+devices to charge inbetween runs. In addition, some (energy) profilers can only provide accurate measurements when there is no charge flowing into the battery during profiling. To use this option the device(s) should be connected to ADB using WiFi.
+The option expects a JSON object with "enable_command" and "disable_command" as keys and the corresponding commands as values.
+
+```js
+"usb_handler" : {
+                "enable_command"  : "uhubctl -l 2 -a 1",
+                "disable_command" : "uhubctl -l 2 -a 0" 
+                }
+```
+The example above uses [uhubtl](https://github.com/mvp/uhubctl), an utilitiy that makes it possible to programmatically enable and disable USB port(s). Please note
+uhubctl is only compatible with a selection of devices (see the full list on GitHub). We have used and tested uhubctl primarily on a Raspberry PI 4B. There are a few caveats when using uhubctl on the Raspberry PI 4B:
+- You cannot specify which USB port to enable or disable. Either ALL USB ports are enabled or ALL USB ports are disabled.
+- When a USB block/mass storage device is connected, in addition to your device(s) under test, it is likely that the power will turn back on after a few seconds. This is caused by the fact that some device drivers in the kernel are surprised by USB device being turned off and automatically try to power it back on.
+The easiest way to fix this issue to disconnect the USB block/mass storage. An alternative is to use the `udiskctl`, see [here](https://github.com/mvp/uhubctl#usb-devices-are-not-removed-after-port-power-down-on-linux) for more info.
+
 **devices** *JSON*
 A JSON object to describe the devices to be used and their arguments. Below are several examples:
 ```js

@@ -1,9 +1,9 @@
 import os
 import os.path as op
-
+import subprocess
 import pytest
 from mock import Mock, patch
-
+from AndroidRunner.USBHandler import USBHandler, USBHandlerException
 import AndroidRunner.Tests as Tests
 import AndroidRunner.util as util
 import paths
@@ -213,3 +213,105 @@ class TestTestsClass(object):
         Tests.check_dependencies(mocked_devices, mock_dependencies)
         assert mock_device.is_installed.call_count == 2
         assert mock_log.call_count == 0
+
+class TestUSBHandler(object):
+    @pytest.fixture()
+    def usb_handler(self):
+        usb_handler_config = {"enable_command" : "enable", "disable_command" : "disable"}
+        usb_handler = USBHandler(usb_handler_config)
+        return usb_handler
+
+    def test_init_error_no_enable_command(self):
+        usb_handler_config = {"disable_command" : "command"}
+
+        with pytest.raises(util.ConfigError) as exception_result:
+            usb_handler = USBHandler(usb_handler_config)
+        assert "Please provide an enable_command for the usb_handler." in str(exception_result.value)
+
+    def test_init_error_no_disable_command(self):
+        usb_handler_config = {"enable_command" : "command"}
+
+        with pytest.raises(util.ConfigError) as exception_result:
+            usb_handler = USBHandler(usb_handler_config)
+        assert "Please provide an disable_command for the usb_handler." in str(exception_result.value)
+
+    def test_init_no_config(self):
+        usb_handler_config = None
+        usb_handler = USBHandler(usb_handler_config)
+
+        assert usb_handler.usb_enable_command == None
+        assert usb_handler.usb_disable_command == None 
+        assert usb_handler._usb_enabled == None
+
+    def test_init_with_valid_config(self):
+        usb_handler_config = {"enable_command" : "enable", "disable_command" : "disable"}
+        usb_handler = USBHandler(usb_handler_config)
+
+        assert usb_handler.usb_enable_command == "enable"
+        assert usb_handler.usb_disable_command == "disable" 
+        assert usb_handler._usb_enabled == True
+
+    @patch("AndroidRunner.USBHandler.USBHandler._run_command")
+    def test_enable_usb_do_enable_run_command(self, run_command_mock, usb_handler):
+        usb_handler._usb_enabled = False
+        usb_handler.enable_usb()
+
+        run_command_mock.assert_called_once_with("enable")
+        assert run_command_mock.call_count == 1
+
+    @patch("AndroidRunner.USBHandler.USBHandler._run_command")
+    def test_enable_usb_do_not_run_command(self, run_command_mock, usb_handler):
+        usb_handler._usb_enabled = True
+        usb_handler.enable_usb()
+
+        assert run_command_mock.call_count == 0
+
+    @patch("AndroidRunner.USBHandler.USBHandler._run_command")
+    def test_disable_do_disable_run_command(self, run_command_mock, usb_handler):
+        usb_handler._usb_enabled = True
+        usb_handler.disable_usb()
+
+        run_command_mock.assert_called_once_with("disable")
+        assert run_command_mock.call_count == 1
+
+    @patch("AndroidRunner.USBHandler.USBHandler._run_command")
+    def test_disable_usb_do_not_disable_run_command(self, run_command_mock, usb_handler):
+        usb_handler._usb_enabled = False
+        usb_handler.disable_usb()
+
+        assert run_command_mock.call_count == 0
+
+    @patch("subprocess.Popen")
+    def test_run_command_no_command(self, popen_mock):
+        usb_handler_config = None
+        usb_handler = USBHandler(usb_handler_config)
+
+        usb_handler._run_command(None)
+        assert popen_mock.call_count == 0
+
+    @patch("subprocess.Popen")
+    def test_run_command_throw_timeout_expired_exception(self, popen_mock, usb_handler):
+        def throw_timeout_expired_exception(timeout):
+            raise subprocess.TimeoutExpired("cmd", 5)
+
+        proc_object = Mock()
+        proc_object.communicate = throw_timeout_expired_exception
+        popen_mock.return_value = proc_object
+
+        with pytest.raises(USBHandlerException) as exception_result:
+            usb_handler._run_command("enable")
+        assert "TimeOutError while executing USB command" in str(exception_result.value)
+
+        popen_mock.assert_called_once_with(["enable"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    @patch("subprocess.Popen")
+    def test_run_command_throw_timeout_throw_stderr(self, popen_mock, usb_handler):
+        proc_object = Mock()
+        proc_object.communicate.return_value = (None, b"error")
+        popen_mock.return_value = proc_object
+
+        with pytest.raises(USBHandlerException) as exception_result:
+            usb_handler._run_command("enable")
+        assert "Could not execute USB command: error" in str(exception_result.value)
+
+        popen_mock.assert_called_once_with(["enable"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
