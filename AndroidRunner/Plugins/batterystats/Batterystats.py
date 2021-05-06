@@ -78,13 +78,15 @@ class Batterystats(Profiler):
         # TODO: Check if 'systrace freq idle' is supported by the device
         global sysproc
 
-        sysproc = subprocess.Popen(
-            '{} freq idle -e {} -a {} -t {} -o {}'.format(self.systrace, device.id, application, int(self.duration + 5),
-                                                          systrace_file), shell=True)
-
-    # FIX
+        # Run systrace in another thread.
+        cmd = '{} freq idle -e {} -a {} -o {}'.format(self.systrace, device.id, application,
+                                                          systrace_file) 
+        cmd = cmd.split()
+        sysproc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
     def stop_profiling(self, device, **kwargs):
+        # batterystats does not need to be stopped. systrace is stopped in the collect_results function
+        # since it needs to run a little bit longer than the rest (see original implementation where it runs for 5 secs longer)
         self.profile = False
 
     # Pull logcat file from device
@@ -111,8 +113,8 @@ class Batterystats(Profiler):
         return energy_consumed_j
 
     def get_systrace_results(self, device):
-        # Wait for Systrace file finalisation before parsing
-        sysproc.wait()
+        stdout, stderr = sysproc.communicate(input=b"\n")
+
         cores = int(device.shell('cat /proc/cpuinfo | grep processor | wc -l'))
 
         systrace_results = []
