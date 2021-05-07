@@ -75,7 +75,7 @@ Pull requests should be made from secondary branches (ie, not `master`).  Also m
 
 When a pull request is submitted, a number of automated tests are performed on the **TravisCI** platform and with **SonarCloud**.  TravisCI runs coverage analysis to confirm that all major components in the framework have associated unit tests in tests/unit/.  In other words, **you'll need to add unit tests for new methods, plugins or other functionality improvements**.  For an expedited review process, run **pytest** in your local environment before submitting a pull request.  You can execute these tests in the android-runner directory with: `py.test [options] tests/unit`. It's also possible to run py.test with a specific module in tests/unit/.   Don't forget to **remove debugging statements** before submitting.
 
-To execute the test suite make sure you have installed coverage, pytest and mock globally or in your virtual environment. You can then run (assuming Python3):
+To execute the test suite make sure you have installed `coverage`, `pytest` and `mock` either globally or in your virtual environment. You can then run (assuming Python3):
 ```sh
 python -m coverage run -m py.test tests/unit/
 ```
