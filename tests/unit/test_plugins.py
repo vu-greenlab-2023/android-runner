@@ -2,13 +2,17 @@ import csv
 import os.path as op
 
 import pytest
-from mock import Mock, call, patch
+from mock import Mock, call, patch, mock_open
 from lxml.etree import ElementTree
 import paths
+import subprocess
+import datetime
 from AndroidRunner.Plugins.android.Android import Android
 from AndroidRunner.Plugins.batterystats.Batterystats import Batterystats
 from AndroidRunner.Plugins.Profiler import Profiler
+from AndroidRunner.Plugins.Profiler import ProfilerException
 from AndroidRunner.Plugins.trepn.Trepn import Trepn
+from AndroidRunner.Plugins.perfetto.Perfetto import Perfetto
 
 class TestPluginTemplate(object):
     @pytest.fixture()
@@ -788,6 +792,145 @@ class TestBatterystatsPlugin(object):
         assert len(aggregated_final_rows) == 1
         assert aggregated_final_rows['batterystats_Joule_calculated'] == '101.227896'
 
+
+class TestPerfettoPlugin(object):
+
+    @pytest.fixture()
+    @patch("AndroidRunner.Plugins.Profiler.__init__")
+    @patch("AndroidRunner.util.load_json")
+    def perfetto_plugin(self, load_json_mock, super_mock):
+        super_mock.return_value = None
+        load_json_mock.return_value = {}
+        config = {"config_file" : "/home/user/perfetto_config.pbtx", "config_file_format" : "text"}
+        test_paths = paths.paths_dict()
+        return Perfetto(config, test_paths)
+
+    @pytest.fixture()
+    def mock_device(self):
+        return Mock()
+
+    @patch('AndroidRunner.Plugins.Profiler.__init__')
+    @patch("AndroidRunner.util.load_json")
+    def test_init(self, load_json_mock, super_mock):
+        config_mock = Mock()
+        test_paths = paths.paths_dict()
+        config = {"config_file" : "perfetto_config.pbtx", "config_file_format" : "text"}
+        load_json_mock.return_value = {}
+        perfetto_plugin = Perfetto(config, test_paths)
+
+        super_mock.assert_called_once_with(config, test_paths)
+        assert perfetto_plugin.perfetto_trace_file_device_path  == ""
+        assert perfetto_plugin.perfetto_config_file_device_path == ""
+        assert perfetto_plugin.paths == paths.paths_dict()
+        assert perfetto_plugin.perfetto_config_file_local_path == config["config_file"]
+        assert perfetto_plugin.perfetto_config_file_format == config["config_file_format"]
+        assert perfetto_plugin.adb_path == "adb"
+    
+    def test_dependencies(self, perfetto_plugin):
+        assert perfetto_plugin.dependencies() == []
+
+    def test_load(self, perfetto_plugin, mock_device):
+        perfetto_plugin.load(mock_device)
+
+        assert perfetto_plugin.perfetto_config_file_device_path == op.join(perfetto_plugin.PERFETTO_CONFIG_DEVICE_PATH, "perfetto_config.pbtx")
+        mock_device.push.assert_called_with(perfetto_plugin.perfetto_config_file_local_path, perfetto_plugin.perfetto_config_file_device_path)
+    
+    def test_set_output(self, perfetto_plugin, tmpdir):
+        test_output_dir = str(tmpdir)
+        
+        perfetto_plugin.set_output(test_output_dir)
+
+        assert perfetto_plugin.output_dir == test_output_dir
+
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.Perfetto._datetime_now")
+    def test_start_profiling_text_config(self, datetime_mock, subprocess_mock, perfetto_plugin, mock_device):
+        datetime_mock.return_value = datetime.datetime(2020, 12, 31, 21, 40, 22, 610621)
+        popen_mock = Mock()
+        popen_mock.communicate.return_value = (b"42", b"")
+        mock_device.id = 20
+        subprocess_mock.return_value = popen_mock
+
+        perfetto_plugin.start_profiling(mock_device)
+
+        assert perfetto_plugin.perfetto_trace_file_device_path == op.join(perfetto_plugin.PERFETTO_TRACES_DEVICE_PATH,
+                 "2020_12_31T21_40_22_610621.perfetto_trace")
+        assert perfetto_plugin.perfetto_device_pid == "42"
+        subprocess_mock.assert_called_with(["adb", "-s", mock_device.id, "shell", f"cat {perfetto_plugin.perfetto_config_file_device_path} | perfetto --background --txt -c - -o {perfetto_plugin.perfetto_trace_file_device_path}"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.Perfetto._datetime_now")
+    def test_start_profiling_binary_config(self, datetime_mock, subprocess_mock, perfetto_plugin, mock_device):
+        datetime_mock.return_value = datetime.datetime(2020, 12, 31, 21, 40, 22, 610621)
+        perfetto_plugin.perfetto_config_file_format = "binary"
+        popen_mock = Mock()
+        popen_mock.communicate.return_value = (b"42", b"")
+        mock_device.id = 20
+        subprocess_mock.return_value = popen_mock
+        empty_string = ""
+
+        perfetto_plugin.start_profiling(mock_device)
+
+        assert perfetto_plugin.perfetto_trace_file_device_path == op.join(perfetto_plugin.PERFETTO_TRACES_DEVICE_PATH,
+                 "2020_12_31T21_40_22_610621.perfetto_trace")
+        assert perfetto_plugin.perfetto_device_pid == "42"
+        subprocess_mock.assert_called_with(["adb", "-s", mock_device.id, "shell", f"cat {perfetto_plugin.perfetto_config_file_device_path} | perfetto --background {empty_string} -c - -o {perfetto_plugin.perfetto_trace_file_device_path}"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
+    def test_start_profiling_error(self, subprocess_mock, perfetto_plugin, mock_device):
+        perfetto_plugin.perfetto_config_file_format = "binary"
+        popen_mock = Mock()
+        popen_mock.communicate.return_value = (b"", b"Error")
+        mock_device.id = 20
+        subprocess_mock.return_value = popen_mock
+
+        with pytest.raises(ProfilerException):
+            perfetto_plugin.start_profiling(mock_device)
+
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
+    def test_start_profiling_error_no_pid(self, subprocess_mock, perfetto_plugin, mock_device):
+        perfetto_plugin.perfetto_config_file_format = "binary"
+        popen_mock = Mock()
+        popen_mock.communicate.return_value = (b"", b"")
+        mock_device.id = 20
+        mock_device.shell.return_value = "22"
+        subprocess_mock.return_value = popen_mock
+
+        perfetto_plugin.start_profiling(mock_device)
+        assert perfetto_plugin.perfetto_device_pid == "22"
+        mock_device.shell.assert_called_once_with("ps -A | grep perfetto | awk '{print $2}'")
+
+    def test_stop_profiling(self, mock_device, perfetto_plugin):
+        perfetto_plugin.perfetto_device_pid = "42"
+        perfetto_plugin.stop_profiling(mock_device)
+
+        mock_device.shell.assert_called_once_with("kill 42")
+
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
+    @patch("builtins.open")
+    def test_collect_results(self, open_mock, subprocess_mock, perfetto_plugin, mock_device) :
+        m = mock_open()
+        popen_mock = Mock()
+        popen_mock.communicate.return_value = (b"42", b"")
+        mock_device.id = 20
+        subprocess_mock.return_value = popen_mock
+        perfetto_plugin.perfetto_trace_file_device_path = op.join(perfetto_plugin.PERFETTO_TRACES_DEVICE_PATH, "filename.perfetto_trace")
+        perfetto_plugin.paths["OUTPUT_DIR"] =  "/home/user/"
+        filename =  "/home/user/filename.perfetto_trace"
+
+        perfetto_plugin.collect_results(mock_device)
+
+        open_mock.assert_called_once_with(filename, "w")
+        mock_device.shell.assert_called_once_with(f"rm -f {perfetto_plugin.perfetto_trace_file_device_path}")
+
+    def test_unload(self, mock_device, perfetto_plugin):
+        perfetto_plugin.perfetto_config_file_device_path = "/sdcard/perfetto/trace.perfetto_trace"
+        perfetto_plugin.unload(mock_device)
+
+        mock_device.shell.assert_called_once_with(f"rm -Rf {perfetto_plugin.perfetto_config_file_device_path}")
+
 class TestTrepnPlugin(object):
 
     @pytest.fixture()
@@ -797,7 +940,7 @@ class TestTrepnPlugin(object):
     @pytest.fixture()
     def mock_device(self):
         return Mock()
-
+   
     @pytest.fixture()
     @patch('AndroidRunner.Plugins.trepn.Trepn.Trepn.build_preferences')
     @patch('AndroidRunner.Plugins.Profiler.__init__')
