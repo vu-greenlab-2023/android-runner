@@ -2,7 +2,7 @@ import logging
 import multiprocessing as mp
 import os.path as op
 import signal
-
+import time
 from . import Tests
 from .util import FileNotFoundError
 
@@ -42,7 +42,8 @@ class Script(object):
         """The multiprocessing wrapper of Device.logcat_regex()"""
         # https://stackoverflow.com/a/21936682
         # pyadb uses subprocess.communicate(), therefore it blocks
-        device.logcat_regex(regex)
+        while not device.logcat_regex(regex):
+            time.sleep(1)
         queue.put('logcat')
 
     def run(self, device, *args, **kwargs):
