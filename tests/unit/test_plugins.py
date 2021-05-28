@@ -481,8 +481,7 @@ class TestBatterystatsPlugin(object):
         batterystats_plugin.start_profiling(mock_device)  # start profiling call get_data
 
         capsys.readouterr()  # Catch print
-        popen_mock.assert_called_once_with('systrace freq idle -e 123 -a com.android.chrome -t 5 -o {}'
-                                           .format(op.join(str(tmpdir), 'systrace_123_strftime.html')), shell=True)
+        popen_mock.assert_called_once_with(["systrace", "freq", "idle", "-e", "123", "-a", "com.android.chrome", "-o", "{}".format(op.join(str(tmpdir), "systrace_123_strftime.html"))], stdin=-1)
 
     def test_stop_profiling(self, batterystats_plugin, mock_device):
         batterystats_plugin.profile = True
@@ -621,7 +620,9 @@ class TestBatterystatsPlugin(object):
     def test_get_systrace_result(self, popen_mock, time_mock, parse_mock, batterystats_plugin, mock_device, tmpdir,
                                  capsys):
         # set global variables
-        popen_return_value = Mock()
+        proc = Mock()
+        proc.communicate.return_value = [Mock(), Mock()]
+        popen_return_value = proc
         popen_mock.return_value = popen_return_value
         parse_return_value = Mock()
         parse_mock.return_value = parse_return_value
@@ -639,7 +640,7 @@ class TestBatterystatsPlugin(object):
         get_sysrace_result = batterystats_plugin.get_systrace_results(mock_device)
 
         assert get_sysrace_result == parse_return_value
-        popen_return_value.wait.assert_called_once()
+        popen_return_value.communicate.assert_called_once()
         parse_mock.assert_called_once_with('com.android.chrome', op.join(str(tmpdir), 'systrace_123_strftime.html'),
                                            op.join(str(tmpdir), 'logcat_123_strftime.txt'),
                                            op.join(str(tmpdir), 'batterystats_history_123_strftime.txt'),
@@ -651,7 +652,9 @@ class TestBatterystatsPlugin(object):
     def test_get_systrace_result_parsing_disabled(self, popen_mock, time_mock, parse_mock, batterystats_plugin_systrace_parsing_disabled, mock_device, tmpdir,
                                  capsys):
         # set global variables
-        popen_return_value = Mock()
+        proc = Mock()
+        proc.communicate.return_value = [Mock(), Mock()]
+        popen_return_value = proc
         popen_mock.return_value = popen_return_value
         parse_return_value = Mock()
         parse_mock.return_value = parse_return_value
@@ -669,7 +672,7 @@ class TestBatterystatsPlugin(object):
         get_sysrace_result = batterystats_plugin_systrace_parsing_disabled.get_systrace_results(mock_device)
 
         assert get_sysrace_result == []
-        popen_return_value.wait.assert_called_once()
+        popen_return_value.communicate.assert_called_once()
         parse_mock.assert_not_called()
 
 
