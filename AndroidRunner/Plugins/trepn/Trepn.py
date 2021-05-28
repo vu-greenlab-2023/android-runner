@@ -121,7 +121,7 @@ class Trepn(Profiler):
         # Gives the latest result
         db = device.shell(r'ls %s | grep "\.db$"' % Trepn.DEVICE_PATH).strip().splitlines()
         newest_db = db[len(db) - 1]
-        csv_filename = '%s_%s.csv' % (device.id, op.splitext(newest_db)[0])
+        csv_filename = '%s_%s.csv' % (util.slugify(device.id), op.splitext(newest_db)[0])
         if newest_db:
             device.shell('am broadcast -a com.quicinc.trepn.export_to_csv '
                          '-e com.quicinc.trepn.export_db_input_file "%s" '
