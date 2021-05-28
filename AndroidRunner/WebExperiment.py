@@ -23,6 +23,8 @@ class WebExperiment(Experiment):
                 browser = browserItem
         self.before_run(device, path, run, browser)
         self.after_launch(device, path, run, browser)
+
+        self.usb_handler.disable_usb()
         self.start_profiling(device, path, run, browser)
 
         if self.run_stopping_condition_config:
@@ -32,6 +34,8 @@ class WebExperiment(Experiment):
             self.interaction(device, path, run, browser)
 
         self.stop_profiling(device, path, run, browser)
+        self.usb_handler.enable_usb()
+
         self.before_close(device, path, run, browser)
         self.after_run(device, path, run, browser)
 
