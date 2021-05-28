@@ -893,6 +893,8 @@ class TestPerfettoPlugin(object):
         subprocess_mock.assert_called_with(["adb", "-s", mock_device.id, "shell", f"cat {perfetto_plugin.perfetto_config_file_device_path} | perfetto --background {empty_string} -c - -o {perfetto_plugin.perfetto_trace_file_device_path}"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+ 
+
     @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
     def test_start_profiling_error(self, subprocess_mock, perfetto_plugin, mock_device):
         perfetto_plugin.perfetto_config_file_format = "binary"
@@ -916,6 +918,18 @@ class TestPerfettoPlugin(object):
         perfetto_plugin.start_profiling(mock_device)
         assert perfetto_plugin.perfetto_device_pid == "22"
         mock_device.shell.assert_called_once_with("ps -A | grep perfetto | awk '{print $2}'")
+
+    @patch("AndroidRunner.Plugins.perfetto.Perfetto.subprocess.Popen")
+    def test_start_profiling_error_no_pid_ProfilerException(self, subprocess_mock, perfetto_plugin, mock_device):
+        perfetto_plugin.perfetto_config_file_format = "binary"
+        popen_mock = Mock()
+        popen_mock.communicate.return_value = (b"", b"")
+        mock_device.id = 20
+        mock_device.shell.return_value = "22 23 24"
+        subprocess_mock.return_value = popen_mock
+
+        with pytest.raises(ProfilerException):
+            perfetto_plugin.start_profiling(mock_device)
 
     def test_stop_profiling(self, mock_device, perfetto_plugin):
         perfetto_plugin.perfetto_device_pid = "42"
