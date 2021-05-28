@@ -108,6 +108,35 @@ uhubctl is only compatible with a selection of devices (see the full list on Git
 - When a USB block/mass storage device is connected, in addition to your device(s) under test, it is likely that the power will turn back on after a few seconds. This is caused by the fact that some device drivers in the kernel are surprised by USB device being turned off and automatically try to power it back on.
 The easiest way to fix this issue to disconnect the USB block/mass storage. An alternative is to use the `udiskctl`, see [here](https://github.com/mvp/uhubctl#usb-devices-are-not-removed-after-port-power-down-on-linux) for more info.
 
+The **run_stopping_condition** makes it possible to stop the current run when a specific event is triggered. If no event is triggered the run will continue as usual. Right now there are 3 supported events. When the logcat_regex or post_request conditions are used users can also stop the run by using the stop() function call.
+
+1. A regex in the logcat is matched.
+
+      With the configuration below AR continuously checks if the device's logcat contains an entry matching the "\<expr\>" where "\<expr\>" is a regular expression. If this is the case the run will be stopped. Please note that the `regex` option is required to specify the regex.
+      ```js
+      "run_stopping_condition" : {"logcat_regex" : {"regex" : "<expr>"}}
+      ```
+2. The reception of an HTTP POST request.
+
+    With the configuration below AR will start a local webserver on port 2222 which accepts HTTP POST requests to stop the run. The payload of these HTTP POST requests are saved to the output directory. The file format will be .json if the Content-type header is `application/json` and .txt otherwise.
+    ```js
+    "run_stopping_condition" : {"post_request" : {"server_port" : 2222}}
+    ```
+    The `server_port` option is optional. If it is not provided the local webserver will be started on port 8000.
+
+3. A direct call of the stop() function on an Experiment instance.   
+
+    With the configuration below AR allows one to call the stop() method on an AndroidRunner.Experiment instance to stop the current run.  
+    ```js
+    "run_stopping_condition" : {"function" : {}}
+    ```
+    This can be useful in an interaction script when we want to stop the run if some condition holds. The current Experiment instance can be accessed by `args[0]`. An example which stops the run if "certain app" is installed on the device.
+    ```py
+    def main(device, *args, **kwargs):
+      if device.is_installed("certain app"):
+        args[0].stop()
+    ```
+
 **devices** *JSON*
 A JSON object to describe the devices to be used and their arguments. Below are several examples:
 ```js
@@ -193,6 +222,7 @@ Currently, Android Runner contains the plugins listed below, they can immediatel
 | [frametimes](./AndroidRunner/Plugins/frametimes/) (Performance) | Collects frame rendering durations and the number of delayed frames with the technique used in [this article](https://dl.acm.org/doi/pdf/10.1145/2897073.2897100?casa_token=jD3bYLV001kAAAAA:OZiAzZFwtvSO-uK3hgWlz6iNVcTt6uYoT1UWroDEGhDHrEBvLbsIl4E13RhAtRK4IaEPd6putLTzzZw).              |
 | [gc](./AndroidRunner/Plugins/trepn/) (Performance)              | Collects the number of garbage collections as in [this article](https://dl.acm.org/doi/pdf/10.1145/2897073.2897100?casa_token=jD3bYLV001kAAAAA:OZiAzZFwtvSO-uK3hgWlz6iNVcTt6uYoT1UWroDEGhDHrEBvLbsIl4E13RhAtRK4IaEPd6putLTzzZw).                                                            |
 | [perfume_js](./AndroidRunner/Plugins/perfume_js/) (Performance)              | Collects performance metrics using the `Perfume.js` library, e.g. FP, FCP, NavigationTiming, storageEstimate and networkInformation.                                                            |
+| [Perfetto](./AndroidRunner/Plugins/perfetto) (mixed) | Collects data using [Perfetto](https://perfetto.dev/) which supports various data sources including memory, CPU, power and more.
 > Did you develop a plugin for Android Runner? You can [create a pull request](https://github.com/iivanoo/covid-apps-observer/pulls/new) in this repository and we will include it!
 
 

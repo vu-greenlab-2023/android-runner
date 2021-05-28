@@ -1,10 +1,12 @@
 import filecmp
 import os
 from collections import OrderedDict
-
+from http.server import HTTPServer
+from AndroidRunner.StopRunWebserver import StopRunWebserver 
 import pytest
+import psutil
 from mock import MagicMock, Mock, call, patch
-
+from AndroidRunner.util import ConfigError 
 import paths
 from AndroidRunner.Devices import Devices
 from AndroidRunner.Experiment import Experiment
@@ -16,6 +18,7 @@ from AndroidRunner.Scripts import Scripts
 from AndroidRunner.WebExperiment import WebExperiment
 from AndroidRunner.util import ConfigError, makedirs
 from tests.PluginTests import PluginTests
+from AndroidRunner.PrematureStoppableRun import PrematureStoppableRun
 
 
 # noinspection PyUnusedLocal
@@ -278,6 +281,20 @@ class TestExperiment(object):
 
         assert default_experiment.get_experiment() == get_random_run_mock
 
+    def test_stop_run_function_call_on_error(self, default_experiment):
+        default_experiment.run_stopping_condition_config = None
+
+        with pytest.raises(ConfigError):
+            default_experiment.stop_run()
+
+    def test_stop_run_function_success(self, default_experiment):
+        default_experiment.run_stopping_condition_config = {"post_request" : {}}
+        default_experiment.queue = Mock()
+
+        default_experiment.stop_run()
+
+        default_experiment.queue.called_once_with(PrematureStoppableRun.STOPPING_MECHANISM_FUNCTION_CALL)
+
     @patch('AndroidRunner.Experiment.Experiment.prepare_device')
     @patch('AndroidRunner.Experiment.Experiment.before_experiment')
     def test_first_run_device(self, before_experiment, prepare_device, default_experiment):
@@ -399,6 +416,42 @@ class TestExperiment(object):
                           call.after_run_managed(mock_device, path, run)]
         assert mock_manager.mock_calls == expected_calls
 
+    @patch('AndroidRunner.Experiment.Experiment.after_run')
+    @patch('AndroidRunner.Experiment.Experiment.stop_profiling')
+    @patch('AndroidRunner.Experiment.Experiment.interaction')
+    @patch('AndroidRunner.Experiment.Experiment.start_profiling')
+    @patch('AndroidRunner.Experiment.Experiment.before_run')
+    @patch('AndroidRunner.PrematureStoppableRun.PrematureStoppableRun.__init__')
+    @patch('AndroidRunner.PrematureStoppableRun.PrematureStoppableRun.run')
+    @patch('multiprocessing.Queue')
+    def test_premature_stoppable_run(self, queue, premature_stoppable_run_run, premature_stoppable_run_init, before_run, start_profiling, interaction, stop_profiling, after_run,
+                 default_experiment):
+        premature_stoppable_run_init.return_value = None
+        mock_device = Mock()
+        path = "test/path"
+        run = 123456789
+        run_stopping_condition_config = {"post_request" : {}}
+        default_experiment.run_stopping_condition_config = run_stopping_condition_config
+        default_experiment.queue = queue
+
+        mock_manager = Mock()
+        mock_manager.attach_mock(before_run, "before_run_managed")
+        mock_manager.attach_mock(start_profiling, "start_profiling_managed")
+        mock_manager.attach_mock(premature_stoppable_run_init, "premature_stoppable_run_init")
+        mock_manager.attach_mock(premature_stoppable_run_run, "premature_stoppable_run_run")
+        mock_manager.attach_mock(stop_profiling, "stop_profiling_managed")
+        mock_manager.attach_mock(after_run, "after_run_managed")
+
+        default_experiment.run(mock_device, path, run, None)
+
+        expected_calls = [call.before_run_managed(mock_device, path, run),
+                          call.start_profiling_managed(mock_device, path, run),
+                          call.premature_stoppable_run_init(run_stopping_condition_config, queue, interaction, mock_device, path, run),
+                          call.premature_stoppable_run_run(),
+                          call.stop_profiling_managed(mock_device, path, run),
+                          call.after_run_managed(mock_device, path, run)]
+        assert mock_manager.mock_calls == expected_calls
+
     @patch('AndroidRunner.Scripts.Scripts.run')
     def test_before_experiment(self, run_script_mock, default_experiment):
         args = (1, 2, 3)
@@ -473,7 +526,7 @@ class TestExperiment(object):
 
         default_experiment.interaction(mock_device, path, run, *args, **kwargs)
 
-        script_run.assert_called_once_with('interaction', mock_device, *args, **kwargs)
+        script_run.assert_called_once_with('interaction', mock_device, default_experiment, *args, **kwargs)
 
     @patch('AndroidRunner.Profilers.Profilers.stop_profiling')
     def test_stop_profiling(self, start_profiling, default_experiment):
@@ -914,6 +967,51 @@ class TestWebExperiment(object):
                           call.after_run_managed(mock_device, path, run, mock_browser)]
         assert mock_manager.mock_calls == expected_calls
 
+    @patch('AndroidRunner.WebExperiment.WebExperiment.after_run')
+    @patch('AndroidRunner.WebExperiment.WebExperiment.before_close')
+    @patch('AndroidRunner.WebExperiment.WebExperiment.stop_profiling')
+    @patch('AndroidRunner.WebExperiment.WebExperiment.interaction')
+    @patch('AndroidRunner.WebExperiment.WebExperiment.start_profiling')
+    @patch('AndroidRunner.WebExperiment.WebExperiment.after_launch')
+    @patch('AndroidRunner.WebExperiment.WebExperiment.before_run')
+    @patch('AndroidRunner.PrematureStoppableRun.PrematureStoppableRun.__init__')
+    @patch('AndroidRunner.PrematureStoppableRun.PrematureStoppableRun.run')
+    @patch('multiprocessing.Queue')
+    def test_premature_stoppable_run(self, queue, premature_stoppable_run_run, premature_stoppable_run_init, before_run, after_launch, start_profiling, interaction, stop_profiling, before_close, after_run,
+                 web_experiment):
+        premature_stoppable_run_init.return_value = None
+        mock_device = Mock()
+        path = "test/path"
+        run = 123456789
+        run_stopping_condition_config = {"post_request" : {}}
+        mock_browser = Mock()
+        mock_browser.to_string.return_value = 'chrome'
+        web_experiment.browsers = [mock_browser]
+        web_experiment.run_stopping_condition_config = run_stopping_condition_config
+        web_experiment.queue = queue
+
+        mock_manager = Mock()
+        mock_manager.attach_mock(before_run, "before_run_managed")
+        mock_manager.attach_mock(after_launch, "after_launch_managed")
+        mock_manager.attach_mock(start_profiling, "start_profiling_managed")
+        mock_manager.attach_mock(premature_stoppable_run_init, "premature_stoppable_run_init")
+        mock_manager.attach_mock(premature_stoppable_run_run, "premature_stoppable_run_run")
+        mock_manager.attach_mock(stop_profiling, "stop_profiling_managed")
+        mock_manager.attach_mock(before_close, "before_close_managed")
+        mock_manager.attach_mock(after_run, "after_run_managed")
+
+        web_experiment.run(mock_device, path, run, 'chrome')
+
+        expected_calls = [call.before_run_managed(mock_device, path, run, mock_browser),
+                          call.after_launch_managed(mock_device, path, run, mock_browser),
+                          call.start_profiling_managed(mock_device, path, run, mock_browser),
+                          call.premature_stoppable_run_init(run_stopping_condition_config, queue, interaction, mock_device, path, run, mock_browser),
+                          call.premature_stoppable_run_run(),
+                          call.stop_profiling_managed(mock_device, path, run, mock_browser),
+                          call.before_close_managed(mock_device, path, run, mock_browser),
+                          call.after_run_managed(mock_device, path, run, mock_browser)]
+        assert mock_manager.mock_calls == expected_calls
+
     @patch('AndroidRunner.WebExperiment.WebExperiment.after_last_run')
     @patch('AndroidRunner.WebExperiment.WebExperiment.aggregate_subject')
     def test_last_run_false(self, aggregate_subject, after_last_run, web_experiment):
@@ -1259,8 +1357,7 @@ class TestNativeExperiment(object):
 
         native_experiment.start_profiling(mock_device, path, run, *args, **kwargs)
 
-        expected_calls = [call.start_profiling_managed(mock_device, app='com.test.app'),
-                          call.sleep_managed(native_experiment.duration)]
+        expected_calls = [call.start_profiling_managed(mock_device, app='com.test.app')]
         assert mock_manager.mock_calls == expected_calls
 
     @patch('AndroidRunner.Experiment.Experiment.after_run')
@@ -1286,6 +1383,24 @@ class TestNativeExperiment(object):
                           call.mock_device_managed.clear_app_data(native_experiment.package),
                           call.mock_device_managed.configure_settings_device(native_experiment.package, enable=False),
                           call.after_run_managed(mock_device, path, run)]
+        assert mock_manager.mock_calls == expected_calls
+
+    @patch('time.sleep')
+    @patch('AndroidRunner.Experiment.Experiment.interaction')
+    def test_interaction(self, interaction, sleep, native_experiment):
+        args = (1, 2, 3)
+        kwargs = {'arg1': 1, 'arg2': 2}
+        mock_device = Mock()
+        path = 'test/path'
+        run = 123456789
+        mock_manager = Mock()
+        mock_manager.attach_mock(sleep, "sleep_managed")
+        mock_manager.attach_mock(interaction, "interaction_managed")
+
+        native_experiment.interaction(mock_device, path, run, *args, **kwargs)
+
+        expected_calls = [call.interaction_managed(mock_device, path, run, *args, **kwargs),
+                          call.sleep_managed(native_experiment.duration)]
         assert mock_manager.mock_calls == expected_calls
 
     @patch('AndroidRunner.Experiment.Experiment.after_last_run')
@@ -1447,3 +1562,131 @@ class TestExperimentFactory(object):
         assert isinstance(experiment, PluginTests)
         assert os.path.isfile(os.path.join(paths.OUTPUT_DIR, 'config.json'))
         assert filecmp.cmp(str(tmp_file), os.path.join(paths.OUTPUT_DIR, 'config.json'), False)
+
+class TestPrematureStoppableRun(object):
+    def test_invalid_stopping_condition_error(self):
+        config = {"invalid": {}}
+        queue = Mock()
+        interaction = Mock()
+        device = Mock()
+        path = Mock()
+        run = Mock()
+        args = [1, 2, 3]
+        kwargs = {"key" : "value"}
+
+        with pytest.raises(ConfigError):
+            prsc = PrematureStoppableRun(config, queue, interaction, device, path, run, *args, **kwargs)
+
+    def test_no_regex_given(self):
+        config = {"logcat_regex": {}}
+        queue = Mock()
+        interaction = Mock()
+        device = Mock()
+        path = Mock()
+        run = Mock()
+        args = [1, 2, 3]
+        kwargs = {"key" : "value"}
+
+        with pytest.raises(ConfigError):
+            prsc = PrematureStoppableRun(config, queue, interaction, device, path, run, *args, **kwargs)
+
+    def test_server_port_non_integer(self):
+        config = {"post_request": {"port" : "2222"}}
+        queue = Mock()
+        interaction = Mock()
+        device = Mock()
+        path = Mock()
+        run = Mock()
+        args = [1, 2, 3]
+        kwargs = {"key" : "value"}
+
+        with pytest.raises(ConfigError):
+            prsc = PrematureStoppableRun(config, queue, interaction, device, path, run, *args, **kwargs)
+
+    @pytest.fixture()
+    def rsc(self):
+        config = {"post_request": {}}
+        queue = Mock()
+        interaction = Mock()
+        device = Mock()
+        path = Mock()
+        run = Mock()
+        args = [1, 2, 3]
+        kwargs = {"key" : "value"}
+
+        rsc = PrematureStoppableRun(config, queue, interaction, device, path, run, *args, **kwargs)
+        return rsc
+    
+    def test_mp_interaction(self, rsc):
+        rsc._mp_interaction(rsc.queue, rsc.interaction_function, rsc.device, rsc.path, rsc.run, rsc.args, rsc.kwargs)
+
+        rsc.interaction_function.assert_called_once_with(rsc.device, rsc.path, rsc.run, rsc.args, rsc.kwargs)
+        rsc.queue.put.assert_called_once_with("interaction")
+
+    @patch("time.sleep")
+    def test_mp_logcat_regex(self, time_mock, rsc):
+        rsc.device.logcat_regex.side_effect = [False, True]
+        rsc._mp_logcat_regex(rsc.queue, rsc.device, "test_regex")
+
+        time_mock.assert_called_once_with(1)
+        rsc.queue.put.assert_called_once_with(PrematureStoppableRun.STOPPING_MECHANISM_LOGCAT_REGEX)
+    
+    @patch("http.server.HTTPServer.serve_forever")
+    @patch("AndroidRunner.StopRunWebserver.StopRunWebserver")
+    def test_mp_post_request(self, stop_run_webserver, http_server, rsc):
+        rsc._mp_post_request(rsc.queue, 8000)
+
+        http_server.assert_called_once_with()
+        rsc.queue.put.assert_called_once_with("HTTP POST request")
+
+    @patch("AndroidRunner.PrematureStoppableRun.mp.Process")
+    @patch("AndroidRunner.PrematureStoppableRun.psutil.Process")
+    def test_run_post_request(self, psutil_, mp, rsc):
+        proc = Mock()
+        proc_a = Mock()
+        proc_b = Mock()
+        proc.children.return_value = [proc_a, proc_b]
+        psutil_.return_value = proc
+        rsc.condition = "post_request"
+        rsc.run()
+
+        assert mp.call_count == 2
+        assert psutil_.call_count == 2
+        assert proc.children.call_count == 2
+        assert proc_a.terminate.call_count == 2
+        assert proc_b.terminate.call_count == 2
+
+    @patch("AndroidRunner.PrematureStoppableRun.mp.Process")
+    @patch("AndroidRunner.PrematureStoppableRun.psutil.Process")
+    def test_run_logcat_regex(self, psutil_, mp, rsc):
+        proc = Mock()
+        proc_a = Mock()
+        proc_b = Mock()
+        proc.children.return_value = [proc_a, proc_b]
+        psutil_.return_value = proc
+        rsc.condition = "logcat_regex"
+        rsc.run()
+
+        assert mp.call_count == 2
+        assert psutil_.call_count == 2
+        assert proc.children.call_count == 2
+        assert proc_a.terminate.call_count == 2
+        assert proc_b.terminate.call_count == 2
+
+    @patch("AndroidRunner.PrematureStoppableRun.mp.Process")
+    @patch("AndroidRunner.PrematureStoppableRun.psutil.Process")
+    def test_run_function_call(self, psutil_, mp, rsc):
+        proc = Mock()
+        proc_a = Mock()
+        proc_b = Mock()
+        proc.children.return_value = [proc_a, proc_b]
+        psutil_.return_value = proc
+        rsc.condition = "function"
+        rsc.run()
+
+        assert mp.call_count == 1
+        assert psutil_.call_count == 1
+        assert proc.children.call_count == 1
+        proc.children.assert_called_once_with(recursive=True)
+        assert proc_a.terminate.call_count == 1
+        assert proc_b.terminate.call_count == 1

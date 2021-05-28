@@ -219,7 +219,7 @@ class TestScript(object):
         temp_file = tmpdir.join("script.py")
         temp_file.write('\n'.join(['from time import sleep',
                                    'def main(device_id):\n',
-                                   '    sleep(0.5)\n'
+                                   '    sleep(2.5)\n'
                                    '    return "succes"']))
         return str(temp_file)
 
@@ -259,7 +259,7 @@ class TestScript(object):
 
     def test_script_run_timeout(self, script_path):
         fake_device = Mock()
-        assert Python3(script_path, timeout=10).run(fake_device) == 'timeout'
+        assert Python3(script_path, timeout=1).run(fake_device) == 'timeout'
 
     def test_script_run_logcat(self, script_path):
         fake_device = Mock()

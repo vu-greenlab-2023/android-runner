@@ -1,4 +1,6 @@
+import psutil
 import logging
+import multiprocessing as mp
 import os.path as op
 import time
 from os import remove, rmdir, walk
@@ -11,8 +13,8 @@ from .Devices import Devices
 from .Profilers import Profilers
 from .Scripts import Scripts
 from .util import ConfigError, makedirs, slugify_dir
-
-
+from AndroidRunner.PrematureStoppableRun import PrematureStoppableRun 
+import multiprocessing as mp
 # noinspection PyUnusedLocal
 class Experiment(object):
     def __init__(self, config, progress, restart):
@@ -38,8 +40,13 @@ class Experiment(object):
         Tests.check_dependencies(self.devices, self.profilers.dependencies())
         self.output_root = paths.OUTPUT_DIR
         self.result_file_structure = None
+        
         self.usb_handler_config = config.get("usb_handler", None)
         self.usb_handler = USBHandler(self.usb_handler_config)
+
+        self.run_stopping_condition_config = config.get("run_stopping_condition", None)
+        self.queue = mp.Queue()
+        
         if restart:
             for device in self.devices:
                 self.prepare_device(device, restart=True)
@@ -173,13 +180,25 @@ class Experiment(object):
                                    slugify_dir(current_run['path']))
         makedirs(paths.OUTPUT_DIR)
 
+    def stop_run(self):
+        """
+            Stops the current run. Can only be called when using the run_stopping_condition option.
+        """
+        if not self.run_stopping_condition_config:
+            raise ConfigError("Experiment.stop_run() can only be called when a valid run_stopping_condition value is set in the config.")
+        self.queue.put(PrematureStoppableRun.STOPPING_MECHANISM_FUNCTION_CALL)
+   
     def run(self, device, path, run, dummy):
         self.before_run(device, path, run)
 
         self.usb_handler.disable_usb()
         self.start_profiling(device, path, run)
 
-        self.interaction(device, path, run)
+        if self.run_stopping_condition_config:
+            premature_stoppable_run = PrematureStoppableRun(self.run_stopping_condition_config, self.queue, self.interaction, device, path, run)
+            premature_stoppable_run.run()
+        else:
+            self.interaction(device, path, run)
 
         self.stop_profiling(device, path, run)
         self.usb_handler.enable_usb()
@@ -210,7 +229,7 @@ class Experiment(object):
 
     def interaction(self, device, path, run, *args, **kwargs):
         """Interactions on the device to be profiled"""
-        self.scripts.run('interaction', device, *args, **kwargs)
+        self.scripts.run('interaction', device, self, *args, **kwargs)
 
     def stop_profiling(self, device, path, run, *args, **kwargs):
         self.profilers.stop_profiling(device)

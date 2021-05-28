@@ -64,6 +64,16 @@ class TestUtilClass(object):
         with pytest.raises(TimeoutError):
             util.wait_until(func_, 5)
 
+    @patch("psutil.Process")
+    def test_keyboardinterrupt_handler(self, psutil_mock):
+        def test_function():
+            raise KeyboardInterrupt
+
+        new_function = util.keyboardinterrupt_handler(test_function)
+        new_function()
+
+        psutil_mock.terminate.called_once()
+
     def test_makedirs_succes(self, tmpdir):
         dir_path = op.join(str(tmpdir), 'test1')
         assert op.isdir(dir_path) is False
@@ -147,7 +157,8 @@ class TestPathsClass(object):
         assert paths_dict['BASE_OUTPUT_DIR'] == string_base
         assert paths_dict['ORIGINAL_CONFIG_DIR'] == string_original
 
-
+        
+        
 
 class TestTestsClass(object):
     def test_is_integer_not_int(self):
