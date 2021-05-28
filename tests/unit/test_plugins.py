@@ -13,6 +13,7 @@ from AndroidRunner.Plugins.Profiler import Profiler
 from AndroidRunner.Plugins.Profiler import ProfilerException
 from AndroidRunner.Plugins.trepn.Trepn import Trepn
 from AndroidRunner.Plugins.perfetto.Perfetto import Perfetto
+import AndroidRunner.util as util
 
 class TestPluginTemplate(object):
     @pytest.fixture()
@@ -832,12 +833,23 @@ class TestPerfettoPlugin(object):
     def test_dependencies(self, perfetto_plugin):
         assert perfetto_plugin.dependencies() == []
 
-    def test_load(self, perfetto_plugin, mock_device):
+    def test_load(self, perfetto_plugin, mock_device, tmpdir):
+        config_file = tmpdir.mkdir("config_files").join("perfetto_config.pbtx")
+        config_file.write("Perfetto config file")
+        perfetto_plugin.perfetto_config_file_local_path = str(config_file)
         perfetto_plugin.load(mock_device)
 
         assert perfetto_plugin.perfetto_config_file_device_path == op.join(perfetto_plugin.PERFETTO_CONFIG_DEVICE_PATH, "perfetto_config.pbtx")
         mock_device.push.assert_called_with(perfetto_plugin.perfetto_config_file_local_path, perfetto_plugin.perfetto_config_file_device_path)
-    
+
+    def test_load_file_not_found(self, perfetto_plugin, mock_device):
+        perfetto_plugin.perfetto_config_file_local_path = "/home/user/no_file.pbtx"
+
+        with pytest.raises(util.ConfigError) as except_result:
+            perfetto_plugin.load(mock_device)
+
+        assert "Config file not found on host. Is /home/user/no_file.pbtx the correct path?" in str(except_result)
+
     def test_set_output(self, perfetto_plugin, tmpdir):
         test_output_dir = str(tmpdir)
         
