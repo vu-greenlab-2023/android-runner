@@ -1,11 +1,12 @@
 import os.path as op
 import time
-
+import multiprocessing as mp
 from . import Tests
 import paths
 from .BrowserFactory import BrowserFactory
 from .Experiment import Experiment
 from .util import makedirs, slugify_dir
+from AndroidRunner.PrematureStoppableRun import PrematureStoppableRun 
 
 
 class WebExperiment(Experiment):
@@ -22,9 +23,19 @@ class WebExperiment(Experiment):
                 browser = browserItem
         self.before_run(device, path, run, browser)
         self.after_launch(device, path, run, browser)
+
+        self.usb_handler.disable_usb()
         self.start_profiling(device, path, run, browser)
-        self.interaction(device, path, run, browser)
+
+        if self.run_stopping_condition_config:
+            premature_stoppable_run = PrematureStoppableRun(self.run_stopping_condition_config, self.queue, self.interaction, device, path, run, browser)
+            premature_stoppable_run.run()
+        else:
+            self.interaction(device, path, run, browser)
+
         self.stop_profiling(device, path, run, browser)
+        self.usb_handler.enable_usb()
+
         self.before_close(device, path, run, browser)
         self.after_run(device, path, run, browser)
 
@@ -55,7 +66,6 @@ class WebExperiment(Experiment):
         browser.load_url(device, path)
         time.sleep(5)
         super(WebExperiment, self).interaction(device, path, run, *args, **kwargs)
-
         # TODO: Fix web experiments running longer than self.duration
         time.sleep(self.duration)
 
