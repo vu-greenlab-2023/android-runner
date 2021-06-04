@@ -298,6 +298,3 @@ The table below shows on which mobile devices Android Runner was tested and whet
 | LG G6                  | No issues                                                                                                                                                                           |
 | Motorola Moto G5S Plus | BatteryStats is not available as APKTool can't disassemble the retrieved APK. See more [here](https://github.com/iBotPeaches/Apktool/issues/1420/). Trepn works without any issues. |
 
-## Detailed documentation
-The original thesis can be found here:
-https://drive.google.com/file/d/0B7Fel9yGl5-xc2lEWmNVYkU5d2c/view?usp=sharing
