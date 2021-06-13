@@ -14,6 +14,7 @@ from AndroidRunner import util
 
 class Batterystats(Profiler):
 
+    ANDROID_VERSION_11_API_LEVEL_30 = 30
     def __init__(self, config, paths):
         super(Batterystats, self).__init__(config, paths)
         self.output_dir = ''
@@ -92,9 +93,20 @@ class Batterystats(Profiler):
     # Pull logcat file from device
     @staticmethod
     def pull_logcat(device):
-        device.shell('logcat -f /mnt/sdcard/logcat.txt -d')
-        device.pull('/mnt/sdcard/logcat.txt', logcat_file)
-        device.shell('rm -f /mnt/sdcard/logcat.txt')
+        """
+        From Android 11 (API level 30) the path /mnt/sdcard cannot be accessed via ADB
+        as you don't have permissions to access this path. However, we can access /sdcard.
+        """
+        device_api_version = int(device.shell("getprop ro.build.version.sdk"))
+
+        if device_api_version >= Batterystats.ANDROID_VERSION_11_API_LEVEL_30:
+            logcat_output_file_device_dir_path = "/sdcard"
+        else:
+            logcat_output_file_device_dir_path = "/mnt/sdcard"
+
+        device.shell(f"logcat -f {logcat_output_file_device_dir_path}/logcat.txt -d")
+        device.pull(f"{logcat_output_file_device_dir_path}/logcat.txt", logcat_file)
+        device.shell(f"rm -f {logcat_output_file_device_dir_path}/logcat.txt")
 
     # Get BatteryStats data
     def get_batterystats_results(self, device):
@@ -119,9 +131,9 @@ class Batterystats(Profiler):
 
         systrace_results = []
         if self.enable_systrace_parsing: 
-            systrace_results = BatterystatsParser.parse_systrace(app, systrace_file, logcat_file, batterystats_file,
-                                                                 self.powerprofile,
-                                                                 cores)
+            device_api_version = int(device.shell("getprop ro.build.version.sdk"))
+            systrace_results = BatterystatsParser.parse_systrace(app, systrace_file, logcat_file, batterystats_file, \
+                                                                self.powerprofile, cores, device_api_version)
         return systrace_results
 
     def write_results(self, batterystats_results, systrace_results, energy_consumed_j):
