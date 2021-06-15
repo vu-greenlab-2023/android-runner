@@ -7,6 +7,8 @@ SECONDS_IN_MS = 1000.0
 SECONDS_IN_M = 60.0
 SECONDS_IN_H = 3600.0
 SECONDS_IN_D = 86400.0
+
+ANDROID_API_VERSION_28 = 28
 '''
 Power Profile
 '''
@@ -327,7 +329,7 @@ Systrace
 '''
 
 
-def parse_systrace(app, systrace_file, logcat, batterystats, power_profile, core_amount):
+def parse_systrace(app, systrace_file, logcat, batterystats, power_profile, core_amount, device_api_version):
     """ Parse systrace file and calculate results """
     with open(batterystats, 'r') as bs:
         voltage_pattern = re.compile(r'(0|\+\d.*ms).*volt=(\d+)')
@@ -337,7 +339,7 @@ def parse_systrace(app, systrace_file, logcat, batterystats, power_profile, core
         f = sys.read()
         pattern = re.compile(r'(?:<.{3,4}>-\d{1,4}|kworker.+-\d{3}).*\s(\d+\.\d+): (cpu_.*): state=(.*) cpu_id=(\d)')
         unix_time_pattern = re.compile(r'(\d+\.\d+):\stracing_mark_write:\strace_event_clock_sync:\srealtime_ts=(\d+)')
-        logcat_time = parse_logcat(app, logcat)
+        logcat_time = parse_logcat(app, logcat, device_api_version)
         systrace_time = float(unix_time_pattern.search(f).group(2))
         start_time = (logcat_time[0] - systrace_time) / 1000 + float(unix_time_pattern.search(f).group(1))
         end_time = (logcat_time[1] - systrace_time) / 1000 + float(unix_time_pattern.search(f).group(1))
@@ -436,18 +438,32 @@ def parse_systrace(app, systrace_file, logcat, batterystats, power_profile, core
 ''' Logcat '''
 
 
-def parse_logcat(app, logcat_file):
+def parse_logcat(app, logcat_file, device_api_version):
     """ Obtain app start and end times from logcat """
     with open(logcat_file, 'r') as f:
         logcat = f.read()
-        app_start_pattern = re.compile(
-            r'(\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}).(\d{3}).*ActivityManager:\sDisplayed\s(%s)' % str(app))
+        """
+        Starting from Android API SDK-29 (Android 10) instead of ActivityManager ActivityTaskManager 
+        is responsible for starting activities. So we need to apply the right regex
+        pattern given this API number. 
+        https://www.programmersought.com/article/59034604552/
+        """
+        if device_api_version > ANDROID_API_VERSION_28:
+            app_start_pattern = re.compile(
+                r'(\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}).(\d{3}).*ActivityTaskManager:\sDisplayed\s(%s)' % str(app))
+        else:
+            app_start_pattern = re.compile(
+                r'(\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}).(\d{3}).*ActivityManager:\sDisplayed\s(%s)' % str(app))
         print(("App used for logcat: "+str(app)))
         app_start_date = re.findall(app_start_pattern, logcat)[0][0]
         year = dt.datetime.now().year
         time_tuple = t.strptime('{}-{}'.format(year, app_start_date), '%Y-%m-%d %H:%M:%S')
         unix_start_time = int(t.mktime(time_tuple)) * 1000 + int(app_start_pattern.search(logcat).group(2))
 
+        """
+        Interestingly ActivityManager is still used when stopping an activity
+        regardless the API version and thus does not need to be changed.
+        """
         app_stop_pattern = re.compile(
             r'(\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}).(\d{3}).*ActivityManager:\sForce\sstopping\s(%s)' % app)
         app_stop_date = re.findall(app_stop_pattern, logcat)[-1][0]

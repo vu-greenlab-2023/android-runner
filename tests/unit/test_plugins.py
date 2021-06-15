@@ -497,6 +497,7 @@ class TestBatterystatsPlugin(object):
         get_data_mock.return_value = None
         # set global variables
         mock_device.id = '123'
+        mock_device.shell.return_value = "27"
         batterystats_plugin.type = 'web'
         time_mock.return_value = 'strftime'
         batterystats_plugin.output_dir = str(tmpdir)
@@ -508,7 +509,27 @@ class TestBatterystatsPlugin(object):
         expected_calls = [call.shell('logcat -f /mnt/sdcard/logcat.txt -d'),
                           call.pull('/mnt/sdcard/logcat.txt', op.join(str(tmpdir), 'logcat_123_strftime.txt')),
                           call.shell('rm -f /mnt/sdcard/logcat.txt')]
-        assert mock_device.mock_calls[1:] == expected_calls
+        assert mock_device.mock_calls[2:] == expected_calls
+
+    @patch('time.strftime')
+    @patch('AndroidRunner.Plugins.batterystats.Batterystats.Batterystats.get_data')
+    def test_pull_logcat_android_11(self, get_data_mock, time_mock, batterystats_plugin, mock_device, tmpdir, capsys):
+        get_data_mock.return_value = None
+        # set global variables
+        mock_device.id = '123'
+        mock_device.shell.return_value = "30"
+        batterystats_plugin.type = 'web'
+        time_mock.return_value = 'strftime'
+        batterystats_plugin.output_dir = str(tmpdir)
+        batterystats_plugin.start_profiling(mock_device)
+        capsys.readouterr()  # Catch print
+
+        batterystats_plugin.pull_logcat(mock_device)
+
+        expected_calls = [call.shell('logcat -f /sdcard/logcat.txt -d'),
+                          call.pull('/sdcard/logcat.txt', op.join(str(tmpdir), 'logcat_123_strftime.txt')),
+                          call.shell('rm -f /sdcard/logcat.txt')]
+        assert mock_device.mock_calls[2:] == expected_calls
 
     @patch('AndroidRunner.Plugins.batterystats.BatterystatsParser.parse_batterystats')
     @patch('time.strftime')
@@ -642,10 +663,13 @@ class TestBatterystatsPlugin(object):
 
         assert get_sysrace_result == parse_return_value
         popen_return_value.communicate.assert_called_once()
+
+        
+
         parse_mock.assert_called_once_with('com.android.chrome', op.join(str(tmpdir), 'systrace_123_strftime.html'),
                                            op.join(str(tmpdir), 'logcat_123_strftime.txt'),
                                            op.join(str(tmpdir), 'batterystats_history_123_strftime.txt'),
-                                           batterystats_plugin.powerprofile, 8)
+                                           batterystats_plugin.powerprofile, 8, 8)
 
     @patch('AndroidRunner.Plugins.batterystats.BatterystatsParser.parse_systrace')
     @patch('time.strftime')
