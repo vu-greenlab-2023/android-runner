@@ -64,7 +64,9 @@ class Monsoon(Profiler):
         with open(op.join(self.output_dir, 'aggregated.csv'), 'w+') as output:
             writer = csv.writer(output)
             writer.writerow(self.data_points)
-            for output_file in os.listdir(self.output_dir):
+
+            # Loop over files containing the measurements for each run in ascending order (oldest run first, newest run last).
+            for output_file in sorted(os.listdir(self.output_dir), reverse=False):
                 if output_file.startswith("monsoon_"):
                     res = open(op.join(self.output_dir, output_file)).readlines()[1]
                     res = res.rstrip()
