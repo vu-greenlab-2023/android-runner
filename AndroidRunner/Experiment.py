@@ -195,6 +195,7 @@ class Experiment(object):
         self.start_profiling(device, path, run)
 
         if self.run_stopping_condition_config:
+            self.queue = mp.Queue()
             premature_stoppable_run = PrematureStoppableRun(self.run_stopping_condition_config, self.queue, self.interaction, device, path, run)
             premature_stoppable_run.run()
         else:
