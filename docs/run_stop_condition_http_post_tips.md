@@ -20,11 +20,11 @@ function calcaulate_performance() {
 window.addEventListener ? window.addEventListener("load", calcaulate_performance, true) : window.attachEvent && window.attachEvent("onload", calcaulate_performance);
 ```
 
-This snippet sends a HTTP POST request to the local webserver when the web page was fully loaded (i.e. the *onload* event was called) with the page load time as payload. The local webserver then saves this payload to a file. When you are cloning the subjects/websites (i.e. hosting them yourself) in your experiment this works fine. However, when we want to do this when testing websites "in the wild" things become more difficult.
+This snippet sends a HTTP POST request to the local webserver when the web page is fully loaded (i.e. the *onload* event was called) with the page load time as payload. When this HTTP POST request is received by the local webserver it will stop the run and save this payload to a file. When you are cloning the subjects/websites (i.e. hosting them yourself) in your experiment this works fine. However, when we want to do this when testing websites "in the wild" things become more difficult.
 
 To inject Javascript into "real, in the wild, non synthetic" websites we can use a proxy like [mitmproxy](https://mitmproxy.org/) that allows us to rewrite the HTTP request's response before sending it to the client. However, because of todays focus of browsers on security this can result in problems:
 
-1. **Mixed Content:** Most websites nowadays are all served over HTTP**S** (in contrast to HTTP). When we inject the Javascript snippet above into these websites using mitmproxy we will get a mixed content error as the Javascript sends a request using an insecure HTTP connection. Since the local webserver does not support HTTPS we have to circumvent this problem in another way. We can use mitmproxy to rewrite the request to our webserver and change the scheme from HTTP**S** to HTTP.
+1. **Mixed Content:** Most websites nowadays are all served over HTTP**S** (in contrast to HTTP). When we inject the Javascript snippet above into these websites using mitmproxy we will get a mixed content error as the Javascript sends a request using an insecure HTTP connection while the website itself is served over a safe HTTP**S** connection. Since the local webserver does not support HTTPS we have to circumvent this problem in another way. We can use mitmproxy to rewrite the request to our webserver and change the scheme from HTTP**S** to HTTP.
 
 2. **TLS Negotiating:** Even when changing the scheme from HTTPS to HTTP using mitmproxy the browser will send a request to the HTTPS URL to negotiate TLS. Sinde the local Python webserver does not support HTTPS this results in undefined behavior. To solve this problem we change our Javascript code snippet so it sends a HTTP POST request to example.com, which supports HTTPS. This establishes a TLS connection but does not send any data. Then we rewrite the host of the HTTP request from example.com to the adddress of our local webserver so we still send the POST request to our own webserver.
 
@@ -32,7 +32,7 @@ To inject Javascript into "real, in the wild, non synthetic" websites we can use
 
 4. **Content-Security-Policy:** Some websites have set the content-security-policy header which allows websites for example to restricting domains from which content can be requested and thus possibly blocking the HTTP POST request to our local webserver. To circumvent this we can remove this header if present.
 
-Our final mitmproxy script taking care of these things will then look like the one below. Please note that you need to install mitmproxy 7 for this. mitmproxy 7 is still in beta and thus has to be installed from source, see for instructions [this page](https://github.com/mitmproxy/mitmproxy/blob/main/CONTRIBUTING.md).
+Our mitmproxy script taking care of these things will then look like the one below. Please note that this requires mitmproxy 7. mitmproxy 7 is still in beta and thus has to be installed from source, see for instructions [this page](https://github.com/mitmproxy/mitmproxy/blob/main/CONTRIBUTING.md).
 
 ```py
 from mitmproxy import http
@@ -72,4 +72,3 @@ def response(flow):
         flow.response.headers["Access-Control-Allow-Origin"] = "*"
 
 ```
-
