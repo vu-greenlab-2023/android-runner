@@ -28,6 +28,7 @@ class WebExperiment(Experiment):
         self.start_profiling(device, path, run, browser)
 
         if self.run_stopping_condition_config:
+            self.queue = mp.Queue()
             premature_stoppable_run = PrematureStoppableRun(self.run_stopping_condition_config, self.queue, self.interaction, device, path, run, browser)
             premature_stoppable_run.run()
         else:

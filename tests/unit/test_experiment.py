@@ -434,6 +434,9 @@ class TestExperiment(object):
         default_experiment.run_stopping_condition_config = run_stopping_condition_config
         default_experiment.queue = queue
 
+        queue_value = None
+        queue.return_value = queue_value
+
         mock_manager = Mock()
         mock_manager.attach_mock(before_run, "before_run_managed")
         mock_manager.attach_mock(start_profiling, "start_profiling_managed")
@@ -446,7 +449,7 @@ class TestExperiment(object):
 
         expected_calls = [call.before_run_managed(mock_device, path, run),
                           call.start_profiling_managed(mock_device, path, run),
-                          call.premature_stoppable_run_init(run_stopping_condition_config, queue, interaction, mock_device, path, run),
+                          call.premature_stoppable_run_init(run_stopping_condition_config, queue_value, interaction, mock_device, path, run),
                           call.premature_stoppable_run_run(),
                           call.stop_profiling_managed(mock_device, path, run),
                           call.after_run_managed(mock_device, path, run)]
@@ -990,6 +993,9 @@ class TestWebExperiment(object):
         web_experiment.run_stopping_condition_config = run_stopping_condition_config
         web_experiment.queue = queue
 
+        queue_value = None
+        queue.return_value = queue_value
+
         mock_manager = Mock()
         mock_manager.attach_mock(before_run, "before_run_managed")
         mock_manager.attach_mock(after_launch, "after_launch_managed")
@@ -1005,7 +1011,7 @@ class TestWebExperiment(object):
         expected_calls = [call.before_run_managed(mock_device, path, run, mock_browser),
                           call.after_launch_managed(mock_device, path, run, mock_browser),
                           call.start_profiling_managed(mock_device, path, run, mock_browser),
-                          call.premature_stoppable_run_init(run_stopping_condition_config, queue, interaction, mock_device, path, run, mock_browser),
+                          call.premature_stoppable_run_init(run_stopping_condition_config, queue_value, interaction, mock_device, path, run, mock_browser),
                           call.premature_stoppable_run_run(),
                           call.stop_profiling_managed(mock_device, path, run, mock_browser),
                           call.before_close_managed(mock_device, path, run, mock_browser),
