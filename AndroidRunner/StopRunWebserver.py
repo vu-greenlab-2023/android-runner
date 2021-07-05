@@ -49,6 +49,7 @@ class StopRunWebserver(BaseHTTPRequestHandler):
             self.logger.info("Received HTP POST request did not contain a payload.")
 
         self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
 
         def kill_server(server):
