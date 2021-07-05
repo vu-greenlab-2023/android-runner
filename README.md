@@ -122,7 +122,9 @@ The **run_stopping_condition** makes it possible to stop the current run when a 
     ```js
     "run_stopping_condition" : {"post_request" : {"server_port" : 2222}}
     ```
-    The `server_port` option is optional. If it is not provided the local webserver will be started on port 8000.
+    The `server_port` option is optional. If it is not provided the local webserver will be started on port 8000. 
+    
+    For tips on how to use this option in practice consider checking out this [guide](./docs/run_stop_condition_http_post_tips.md).
 
 3. A direct call of the stop() function on an Experiment instance.   
 
