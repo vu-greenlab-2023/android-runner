@@ -5,6 +5,7 @@ import pytest
 from mock import Mock, call, patch
 import time
 import paths
+import subprocess
 from AndroidRunner.MonkeyReplay import MonkeyReplay, MonkeyReplayError
 from AndroidRunner.MonkeyRunner import MonkeyRunner
 from AndroidRunner.Python3 import Python3
@@ -160,19 +161,19 @@ class TestMonkeyReplay(object):
     @patch('subprocess.Popen')
     def test_monkeyreplay_execute_script_succes(self, mock, script_path):
         subprocess_mock = Mock()
-        subprocess_mock.communicate.return_value = ['output', 'error']
+        subprocess_mock.communicate.return_value = [b'output', b'error']
         subprocess_mock.wait.return_value = 0
         mock.return_value = subprocess_mock
         monkey_path = '/usr/lib/android-sdk/tools/monkeyrunner'
         monkey_command = "{} -plugin jyson-1.0.2.jar MonkeyPlayer/replayLogic.py {}".format(monkey_path,
                                                                                             script_path).split(" ")
         assert MonkeyReplay(script_path, monkeyrunner_path=monkey_path).execute_script(Mock()) == 0
-        mock.assert_called_once_with(monkey_command, cwd=paths.ROOT_DIR, shell=False, stderr=-2, stdout=-1)
+        mock.assert_called_once_with(monkey_command, cwd=paths.ROOT_DIR, shell=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
     @patch('subprocess.Popen')
     def test_monkeyreplay_execute_script_error(self, mock, script_path):
         subprocess_mock = Mock()
-        subprocess_mock.communicate.return_value = ['error_output', 'fake_error']
+        subprocess_mock.communicate.return_value = [b'error_output', b'fake_error']
         subprocess_mock.wait.return_value = 1
         mock.return_value = subprocess_mock
         monkey_path = '/usr/lib/android-sdk/tools/monkeyrunner'
