@@ -28,8 +28,12 @@ class MonkeyReplay(Script):
         }
         args['plugins'] = ' '.join(['-plugin %s' % p for p in args['plugins']])
         args = '{monkey} {plugins} {program} {args}'.format(**args).split(' ')
-        cmdp = subprocess.Popen(args, cwd=paths.ROOT_DIR, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        cmdp = subprocess.Popen(args, cwd=paths.ROOT_DIR, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = cmdp.communicate()
+        output = output.decode('ascii')
+        error  = error.decode('ascii')
+        self.logger.debug(f"monkeyrunner stdout: {output}")
+        self.logger.debug(f"monkeyrunner stderr: {error}")
         return_code = cmdp.wait()
         if return_code != 0:
             raise MonkeyReplayError(output)

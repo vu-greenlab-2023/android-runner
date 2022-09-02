@@ -10,7 +10,7 @@ def run_input(action, newdevice, test):
     action_complete = True
     if action['type'] == 'touch':
         if 'x' in action and 'y' in action and 'up' in action and 'down' in action:
-            counter = (float(action['up']) - float(action['down'])) / 1000
+            counter = (float(action['up']) - float(action['down']))
             if test:
                 print('touch at (' + str(action['x']) + ", " + str(action['y']) + ") for " + str(counter) + " seconds")
             else:
@@ -53,7 +53,7 @@ def get_time_difference(curr_line, prev_line):
     if "'" not in curr_line and "'" not in prev_line:
         curr_event = json.loads(curr_line)
         prev_event = json.loads(prev_line)
-        difference = (float(curr_event['down']) - float(prev_event['up'])) / 1000
+        difference = (float(curr_event['down']) - float(prev_event['up']))
         return difference
     else:
         return 0
