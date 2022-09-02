@@ -113,6 +113,7 @@ def install(device_id, apk, replace=True, all_permissions=True):
         cmd += ' -r'
     if all_permissions:
         cmd += ' -g'
+    cmd += ' -t'
     adb.run_cmd('%s %s' % (cmd, apk))
     # WARNING: Accessing class private variables
     output = adb._ADB__output

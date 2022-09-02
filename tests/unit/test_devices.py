@@ -752,7 +752,7 @@ class TestAdb(object):
         result = Adb.install(device_id, apk)
 
         assert result == 'succes'
-        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -r -g {}'.format(apk))]
+        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -r -g -t {}'.format(apk))]
         assert mock_adb.mock_calls == expected_calls
 
     @patch("zipfile.ZipFile")
@@ -770,7 +770,7 @@ class TestAdb(object):
         result = Adb.install(device_id, xapk_file)
 
         assert result == 'succes'
-        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install-multiple -r -g {}'.format(apk_file))]
+        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install-multiple -r -g -t {}'.format(apk_file))]
         assert mock_adb.mock_calls == expected_calls
 
     @patch("zipfile.ZipFile")
@@ -796,7 +796,7 @@ class TestAdb(object):
         result = Adb.install(device_id, apk, replace=False)
 
         assert result == 'succes'
-        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -g {}'.format(apk))]
+        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -g -t {}'.format(apk))]
         assert mock_adb.mock_calls == expected_calls
 
     def test_install_not_all_permissions(self):
@@ -809,7 +809,7 @@ class TestAdb(object):
         result = Adb.install(device_id, apk, all_permissions=False)
 
         assert result == 'succes'
-        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -r {}'.format(apk))]
+        expected_calls = [call.set_target_by_name(device_id), call.run_cmd('install -r -t {}'.format(apk))]
         assert mock_adb.mock_calls == expected_calls
 
     @patch('AndroidRunner.Adb.success_or_exception')
