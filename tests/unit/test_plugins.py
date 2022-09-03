@@ -1,3 +1,4 @@
+import copy
 import csv
 import os.path as op
 
@@ -210,30 +211,42 @@ class TestAndroidPlugin(object):
         timer_mock.assert_called_once_with(100, android_plugin.get_data, args=(mock_device, 'app'))
         mock_timer_result.start.assert_called_once()
 
+    def test_get_data_race(self, android_plugin, mock_device):
+        android_plugin.profile = False
+
+        old_data = copy.deepcopy(android_plugin.data)
+        android_plugin.get_data(mock_device, 'app')
+
+        assert android_plugin.data == old_data
+
     @patch('timeit.default_timer')
+    @patch('threading.Timer')
     @patch('AndroidRunner.Plugins.android.Android.Android.get_cpu_usage')
     @patch('AndroidRunner.Plugins.android.Android.Android.get_mem_usage')
-    def test_get_data_only_mem(self, get_mem_usage_mock, get_cpu_usage_mock, timeit_mock,
+    def test_get_data_only_mem(self, get_mem_usage_mock, get_cpu_usage_mock, timer_mock, timeit_mock,
                                android_plugin, mock_device):
         timeit_mock.side_effect = [100, 200]
         mock_device.shell.return_value = 'device_time'
         get_mem_usage_mock.return_value = "mem_usage"
         get_cpu_usage_mock.return_value = "cpu_usage"
         android_plugin.data_points = ['mem']
+        android_plugin.profile = True
         android_plugin.get_data(mock_device, 'app')
 
         assert android_plugin.data[1] == ['device_time', 'mem_usage']
 
     @patch('timeit.default_timer')
+    @patch('threading.Timer')
     @patch('AndroidRunner.Plugins.android.Android.Android.get_cpu_usage')
     @patch('AndroidRunner.Plugins.android.Android.Android.get_mem_usage')
-    def test_get_data_only_cpu(self, get_mem_usage_mock, get_cpu_usage_mock, timeit_mock,
+    def test_get_data_only_cpu(self, get_mem_usage_mock, get_cpu_usage_mock, timer_mock, timeit_mock,
                                android_plugin, mock_device):
         timeit_mock.side_effect = [100, 200]
         mock_device.shell.return_value = 'device_time'
         get_mem_usage_mock.return_value = "mem_usage"
         get_cpu_usage_mock.return_value = "cpu_usage"
         android_plugin.data_points = ['cpu']
+        android_plugin.profile = True
         android_plugin.get_data(mock_device, 'app')
 
         assert android_plugin.data[1] == ['device_time', 'cpu_usage']

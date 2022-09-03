@@ -31,6 +31,7 @@ class Android(Profiler):
         self.data_points = [dp for dp in config['data_points']
                             if dp in set(available_data_points)]
         self.data = [['datetime'] + self.data_points]
+        self.lock = threading.Lock()
 
     @staticmethod
     def get_cpu_usage(device):
@@ -68,6 +69,10 @@ class Android(Profiler):
 
     def get_data(self, device, app):
         """Runs the profiling methods every self.interval seconds in a separate thread"""
+        self.lock.acquire()
+        if not self.profile:
+            self.lock.release()
+            return
         start = timeit.default_timer()
         device_time = device.shell('date -u')
         row = [device_time]
@@ -79,12 +84,13 @@ class Android(Profiler):
         end = timeit.default_timer()
         # timer results could be negative
         interval = max(float(0), self.interval - max(0, int(end - start)))
-        if self.profile:
-            threading.Timer(interval, self.get_data,
-                            args=(device, app)).start()
+        self.lock.release()
+        threading.Timer(interval, self.get_data, args=(device, app)).start()
 
     def stop_profiling(self, device, **kwargs):
+        self.lock.acquire()
         self.profile = False
+        self.lock.release()
 
     def collect_results(self, device):
         filename = '{}_{}.csv'.format(
