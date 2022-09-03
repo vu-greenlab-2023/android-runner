@@ -82,7 +82,7 @@ def install(device_id, apk, replace=True, all_permissions=True):
     extension = op.splitext(apk)[-1].lower()
 
     if extension == '.xapk':
-        cmd = 'install-multiple'
+        cmd = ['install-multiple']
         android_runner_dir = os.getcwd()
         # get path of directory apks will be unzipped into.
         path_apks_to_be_installed = op.splitext(apk)[0].lower()
@@ -107,14 +107,14 @@ def install(device_id, apk, replace=True, all_permissions=True):
         logger.info('installing APKs %s' % apk)
         os.chdir(android_runner_dir) # go back to android runner dir
     else:
-        cmd = 'install'
+        cmd = ['install']
         
     if replace:
-        cmd += ' -r'
+        cmd += ['-r']
     if all_permissions:
-        cmd += ' -g'
-    cmd += ' -t'
-    adb.run_cmd('%s %s' % (cmd, apk))
+        cmd += ['-g']
+    cmd += ['-t', apk]
+    adb.run_cmd(cmd)
     # WARNING: Accessing class private variables
     output = adb._ADB__output
     logger.debug('install returned: %s' % output)

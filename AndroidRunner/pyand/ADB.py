@@ -6,6 +6,7 @@ try:
     import subprocess
     import re
     import platform
+    import shlex
     from os import popen as pipe
 except ImportError as e:
     print("[!] Required module missing. %s" % e.args[0])
@@ -67,7 +68,7 @@ class ADB(object):
             a = cmd
         else:
             # All arguments must be single list items
-            a = cmd.split(" ")
+            a = shlex.split(cmd)
 
         a.insert(0, self.__adb_path)
         if self.__target is not None:
@@ -166,7 +167,7 @@ class ADB(object):
         Restore device contents from the <file> backup archive
         adb restore <file>
         """
-        self.run_cmd('restore %s' % file_name)
+        self.run_cmd(['restore', file_name])
         return self.__output
 
     def wait_for_device(self):
@@ -321,7 +322,7 @@ class ADB(object):
         Pulls a remote file
         adb pull remote local
         """
-        self.run_cmd('pull \"%s\" \"%s\"' % (remote, local))
+        self.run_cmd(['pull', remote, local])
         if "bytes in" in self.__error:
             self.__output = self.__error
             self.__error = None
@@ -332,7 +333,7 @@ class ADB(object):
         Push a local file
         adb push local remote
         """
-        self.run_cmd('push \"%s\" \"%s\"' % (local, remote))
+        self.run_cmd(['push', local, remote])
         return self.__output
 
     def shell_command(self, cmd):
@@ -340,7 +341,7 @@ class ADB(object):
         Executes a shell command
         adb shell <cmd>
         """
-        self.run_cmd('shell %s' % cmd)
+        self.run_cmd(['shell', cmd])
         return self.__output
 
     def listen_usb(self):
@@ -356,7 +357,7 @@ class ADB(object):
         Restarts the adbd daemon listening on the specified port
         adb tcpip <port>
         """
-        self.run_cmd("tcpip %s" % port)
+        self.run_cmd(['tcpip', str(port)])
         return self.__output
 
     def get_bugreport(self):
@@ -379,14 +380,14 @@ class ADB(object):
         View device log
         adb logcat <filter>
         """
-        self.run_cmd("logcat %s" % lcfilter)
+        self.run_cmd(['logcat', lcfilter])
         return self.__output
 
     def run_emulator(self, cmd=""):
         """
         Run emulator console command
         """
-        self.run_cmd("emu %s" % cmd)
+        self.run_cmd(['emu', cmd])
         return self.__output
 
     def connect_remote(self, host=DEFAULT_TCP_HOST, port=DEFAULT_TCP_PORT):
@@ -425,7 +426,7 @@ class ADB(object):
         Copy host->device only if changed (-l means list but don't copy)
         adb sync <dir>
         """
-        self.run_cmd("sync %s" % directory)
+        self.run_cmd(['sync', directory])
         return self.__output
 
     def forward_socket(self, local=None, remote=None):
@@ -445,7 +446,10 @@ class ADB(object):
         """
         if package is None:
             return self.__output
-        cmd = "uninstall %s" % (package if keepdata is True else "-k %s" % package)
+        cmd = ['uninstall']
+        if not keepdata:
+            cmd += ['-k']
+        cmd += [package]
         self.run_cmd(cmd)
         return self.__output
 
@@ -461,15 +465,16 @@ class ADB(object):
         if pkgapp is None:
             return self.__output
 
-        cmd = "install"
+        cmd = ["install"]
         if fwdlock is True:
-            cmd += " -l "
+            cmd += ["-l"]
         if reinstall is True:
-            cmd += " -r "
+            cmd += ["-r"]
         if sdcard is True:
-            cmd += " -s "
+            cmd += ["-s"]
+        cmd += [pkgapp]
 
-        self.run_cmd("%s %s" % (cmd, pkgapp))
+        self.run_cmd(cmd)
         return self.__output
 
     def find_binary(self, name=None):
@@ -495,7 +500,7 @@ class ADB(object):
     def sideload(self, otapackage=None):
         if otapackage is None:
             return self.__output
-        self.run_cmd("sideload %s" % otapackage)
+        self.run_cmd(["sideload", otapackage])
         return self.__output
 
     def get_devpath(self):
