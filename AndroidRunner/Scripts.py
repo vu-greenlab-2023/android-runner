@@ -9,7 +9,7 @@ from .util import ConfigError
 
 
 class Scripts(object):
-    def __init__(self, config, monkeyrunner_path='monkeyrunner'):
+    def __init__(self, config, monkeyrunner_path='monkeyrunner', monkey_playback_path='monkey_playback.py'):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.scripts = {}
         for name, script in list(config.items()):
@@ -28,7 +28,7 @@ class Scripts(object):
                 elif s['type'] == 'monkeyreplay':
                     script = MonkeyReplay(path, timeout, logcat_regex, monkeyrunner_path)
                 elif s['type'] == 'monkeyrunner':
-                    script = MonkeyRunner(path, timeout, logcat_regex, monkeyrunner_path)
+                    script = MonkeyRunner(path, timeout, logcat_regex, monkeyrunner_path, monkey_playback_path)
                 else:
                     raise ConfigError('Unknown script type: {}'.format(s['type']))
 

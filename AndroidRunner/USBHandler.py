@@ -1,3 +1,4 @@
+import shlex
 import subprocess
 from .util import ConfigError
 
@@ -65,8 +66,7 @@ class USBHandler(object):
         if command == None:
             return
 
-        command = command.split()
-        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         try:
             (stdout, stderr) = proc.communicate(timeout=USBHandler.USB_COMMAND_TIMEOUT_SECONDS)
