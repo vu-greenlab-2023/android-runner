@@ -138,7 +138,7 @@ class TestExperiment(object):
         assert experiment.result_file_structure is None
         mock_devices.assert_called_once_with(['dev1', 'dev2'], adb_path='test_adb', devices_spec=None)
         mock_profilers.assert_called_once_with({'fake': {'config1': 1, 'config2': 2}})
-        mock_scripts.assert_called_once_with({'script1': 'path/to/1'}, monkeyrunner_path='monkey_path')
+        mock_scripts.assert_called_once_with({'script1': 'path/to/1'}, monkeyrunner_path='monkey_path', monkey_playback_path='monkey_playback.py')
         mock_test.assert_called_once_with(experiment.devices, [])
         assert mock_prepare.call_count == 0
 

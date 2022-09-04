@@ -2,6 +2,8 @@ import subprocess
 
 from AndroidRunner.Script import Script
 
+class MonkeyRunnerError(Exception):
+    pass
 
 class MonkeyRunner(Script):
     """
@@ -26,9 +28,10 @@ class MonkeyRunner(Script):
     Docs and examples: https://developer.android.com/studio/test/monkeyrunner/
     """
 
-    def __init__(self, path, timeout=0, logcat_regex=None, monkeyrunner_path='monkeyrunner'):
+    def __init__(self, path, timeout=0, logcat_regex=None, monkeyrunner_path='monkeyrunner', monkey_playback_path='monkey_playback.py'):
         super(MonkeyRunner, self).__init__(path, timeout, logcat_regex)
         self.monkeyrunner_path = monkeyrunner_path
+        self.monkey_playback_path = monkey_playback_path
 
     def execute_script(self, device, *args, **kwargs):
         """
@@ -37,4 +40,11 @@ class MonkeyRunner(Script):
         Returns the return value returned by MonkeyRunner.
         """
         super(MonkeyRunner, self).execute_script(device, *args, **kwargs)
-        return subprocess.call([self.monkeyrunner_path, self.path])
+        res = subprocess.run([self.monkeyrunner_path, self.monkey_playback_path, self.path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        if (res.returncode != 0                                     or \
+            b'java.net.SocketException: Broken pipe' in res.stdout  or \
+            b'unable to parse options'               in res.stdout  or \
+            b'unknown command: '                     in res.stdout     \
+        ):
+            raise MonkeyRunnerError(res.stdout.decode('ascii'))
+        return res.returncode
