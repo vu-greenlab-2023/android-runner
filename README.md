@@ -26,7 +26,7 @@ In addition, we embed a snippet of Javascript code (https://github.com/S2-group/
 ## The repository
 
 The repository is forked from https://github.com/S2-group/android-runner and its original structure has been customized. We removed some folders which are not related to our experiment. Thus, this repository contains:
-* web-apps resources in both with and without ads and analytic related code (direct to [Google Drive](https://drive.google.com/drive/folders/1bfCNJWytrUwlmJFu_hQp_pRtOy_rnZdO?usp=sharing) because uploading more than 25MB to github is not allowed.) 
+* web-apps resources in both with and without ads and analytic related code (direct to our [Google Drive](https://drive.google.com/drive/folders/1bfCNJWytrUwlmJFu_hQp_pRtOy_rnZdO?usp=sharing) because uploading more than 25MB to github is not allowed.) 
 * source code of the configuration scripts for building the dataset
 * raw data resulting from the execution of the experiment
 * R scripts for data analysis
