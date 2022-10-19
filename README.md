@@ -33,7 +33,7 @@ The repository is forked from https://github.com/S2-group/android-runner and its
 
 ## How to run the experiment on performance and energy consumption measurement
 
-// Sijud's part
+All parameters required for measuring the performance and energy consumption are specified in the config_web.json file.  At the beginning of each run, the local Live Server is started. 
 
 ## R Script
 // Arini's and Soha's part
