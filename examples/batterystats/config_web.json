@@ -1,17 +1,39 @@
 {
   "type": "web",
   "devices": {
-    "nexus6p": {}
+    "nokia": {}
   },
-  "repetitions": 1,
+  "repetitions": 10,
   "duration": 60000,
   "browsers": ["chrome"],
-  "monkeyrunner_path": "/home/user/Android/Sdk/tools/bin/monkeyrunner",
-  "systrace_path": "/home/user/Android/Sdk/platform-tools/systrace/systrace.py",
-  "powerprofile_path": "android-runner/examples/batterystats/Scripts/power_profile.xml", 
+  "systrace_path": "/usr/lib/android-sdk/platform-tools/systrace/systrace.py",
+  "powerprofile_path": "android-runner/examples/batterystats/Scripts/power_profile.xml",
+  "run_stopping_condition" : {"logcat_regex" : {"regex": "=INTERACTION=" }},
+  "run_stopping_condition" : {"post_request" : {}},
+  "clear_cache" : true,
   "paths": [
-    "https://www.google.com"
+    "http://192.168.40.93:5500/without_ads/tripadvisor_without_ads/www.tripadvisor.com/index.html",
+    "http://192.168.40.93:5500/without_ads/fanfiction_without_ads/www.fanfiction.net/index.html",
+    "http://192.168.40.93:5500/with_ads/omio_with_ads/www.omio.com/index.html",
+    "http://192.168.40.93:5500/with_ads/readawrite_with_ads/www.readawrite.com/index.html",
+    "http://192.168.40.93:5500/with_ads/coachella_with_ads/coachella.com/index.html",
+    "http://192.168.40.93:5500/without_ads/ticketmaster_without_ads/www.ticketmaster.nl/index.html",
+    "http://192.168.40.93:5500/with_ads/traveloka_with_ads/www.traveloka.com/en-id/index.html",
+    "http://192.168.40.93:5500/with_ads/tripadvisor_with_ads/www.tripadvisor.com/index.html",
+    "http://192.168.40.93:5500/without_ads/traveloka_without_ads/www.traveloka.com/en-id/index.html",
+    "http://192.168.40.93:5500/with_ads/fanfiction_with_ads/www.fanfiction.net/index.html",
+    "http://192.168.40.93:5500/without_ads/lazada_without_ads/www.lazada.co.th/index.html",
+    "http://192.168.40.93:5500/without_ads/coachella_without_ads/coachella.com/index.html",
+    "http://192.168.40.93:5500/with_ads/bitly_with_ads/bitly.com/index.html",
+    "http://192.168.40.93:5500/with_ads/ebay_with_ads/www.ebay.com/index.html",
+    "http://192.168.40.93:5500/without_ads/readawrite_without_ads/www.readawrite.com/index.html",
+    "http://192.168.40.93:5500/with_ads/lazada_with_ads/www.lazada.co.th/index.html",
+    "http://192.168.40.93:5500/without_ads/ebay_without_ads/www.ebay.com/index.html",
+    "http://192.168.40.93:5500/without_ads/omio_without_ads/www.omio.com/index.html",
+    "http://192.168.40.93:5500/without_ads/bitly_without_ads/bitly.com/index.html",
+    "http://192.168.40.93:5500/with_ads/ticketmaster_with_ads/www.ticketmaster.nl/index.html"
   ],
+  "randomization": false,
   "profilers": {
     "batterystats": {
       "cleanup": true
@@ -35,3 +57,4 @@
   },
   "time_between_run": 120000
 }
+
