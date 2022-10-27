@@ -35,5 +35,13 @@ The repository is forked from https://github.com/S2-group/android-runner and its
 
 All parameters required for measuring the performance and energy consumption are specified in the config_web.json file.  At the beginning of each run, the local Live Server is started. 
 
+steps to run the experiment in raspberry Pi:
+
+1. Make sure the android device is plugged into raspberry Pi by running the command,
+     adb devices
+     The output should return the device ID
+3. Run the commands to invoke batterystats plugin:
+      python3 android-runner android-runner/examples/batterystats/config_web.json 
+
 ## R Script
 3rdTrial.csv
