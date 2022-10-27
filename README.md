@@ -38,10 +38,10 @@ All parameters required for measuring the performance and energy consumption are
 steps to run the experiment in raspberry Pi:
 
 1. Make sure the android device is plugged into raspberry Pi by running the command,
-     adb devices
+     **_adb devices_**
      The output should return the device ID
 3. Run the commands to invoke batterystats plugin:
-      python3 android-runner android-runner/examples/batterystats/config_web.json 
+    _  **python3 android-runner android-runner/examples/batterystats/config_web.json **_
 
 ## R Script
 3rdTrial.csv
