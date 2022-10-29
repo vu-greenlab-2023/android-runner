@@ -7,7 +7,7 @@ library(bestNormalize)
 library(rstatix)
 library(plyr)
 
-result <- read_csv("/Users/arininurrohmah/Documents/file/GreenLab/Analytics/3rdTrial/3rdTrial.csv")
+result <- read_csv("Data_AdsAnalytics.csv")
 # results <- spec(result)
 # results
 result
@@ -261,58 +261,7 @@ MeanwithoutAdsPLT <- mean(withoutAdsPLT$PLT, na.rm = TRUE)
 MeanwithoutAdsPLT
 
 
-#t.test
-#mean EC with ads = 53.7999 
-withAdsEC$EC %>% 
-  t.test(withAdsEC$EC, data=., na.rm = TRUE)
-
-#mean EC without ads = 53.9973  
-withoutAdsEC$EC %>% 
-  t.test(withoutAdsEC$EC, data=., na.rm = TRUE)
-
-#mean PLT with ads = 6267.204 
-withAdsPLT$PLT %>% 
-  t.test(withAdsPLT$PLT, data=., na.rm = TRUE)
-
-#mean PLT without ads = 6895.818 
-withoutAdsPLT$PLT %>% 
-  t.test(withoutAdsPLT$PLT, data=., na.rm = TRUE)
-
-#mean EC with ads = 53.7999   mean EC without ads = 53.9973
-resultEC %>% 
-  t.test(EC ~ Treatments, data=.)
-
-#mean PLT with ads = 6829.582   mean EC without ads = 6872.548
-resultPLT %>% 
-  t.test(PLT ~ Treatments, data=.)
-
-
-#asign in aov
-resEC.aov <- resultEC %>% 
-  aov(EC ~ Treatments, data=.)
-
-
-resPLT.aov <- resultPLT %>% 
-  aov(PLT ~ Treatments, data=.)
-
-#summary
-summary(resEC.aov)
-summary(resPLT.aov)
-
-
-#try non parametric test kruskal
-res.kruskalEC <- resultEC %>% 
-  kruskal.test(EC ~ Treatments, data=.)
-
-res.kruskalPLT <- resultPLT %>% 
-  kruskal.test(PLT ~ Treatments, data=.)
-
-#Kruskal-Wallis chi-squared = 0.95319, df = 1, p-value = 0.3289
-res.kruskalEC
-#Kruskal-Wallis chi-squared = 0.13683, df = 1, p-value = 0.7115
-res.kruskalPLT
-
-#try non parametric test wilcox
+#try non parametric test - Wilcoxon Signed Rank
 res.wilcoxEC <- resultEC %>% 
   wilcox.test(EC ~ Treatments, data=.)
 
